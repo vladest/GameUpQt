@@ -20,6 +20,7 @@ signals:
 
 public slots:
     bool ping();
+    QString loginAnonymous(const QString &username);
 
 private slots:
     void reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data);
@@ -27,10 +28,12 @@ private slots:
 
 private:
     QString m_apiKey;
+    QString m_token;
     QNetworkAccessManager m_manager;
     GameOnRequest *gonRequest;
     QEventLoop loop;
     QNetworkReply::NetworkError lasterror;
+    QByteArray lastData;
 };
 
 #endif // GAMEUPCOMMON_H

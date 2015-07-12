@@ -15,6 +15,8 @@ public:
 public slots:
     void setApiKey(QString apiKey);
     bool ping();
+    QString loginAnonymous(const QString &username);
+
 signals:
     void apiKeyChanged(QString apiKey);
 private:

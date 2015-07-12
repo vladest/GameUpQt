@@ -2,8 +2,6 @@
 #include <QUrlQuery>
 #include "gameonrequest.h"
 
-static const char gameOnAPIUrl[] = "https://api.gameup.io/v0/";
-
 GameOnRequest::GameOnRequest(const QString &apiKey, QNetworkAccessManager *manager, QObject *parent) :
     QObject(parent),
     m_accessManager(manager),
@@ -17,7 +15,6 @@ GameOnRequest::GameOnRequest(const QString &apiKey, QNetworkAccessManager *manag
 void GameOnRequest::get(const QString &partUrl, const QList<RequestParameter> &reqParameters) {
     if (!setup(partUrl, reqParameters))
         return;
-    qDebug() << "api" << request_.rawHeader("username");
     reply_ = m_accessManager->get(request_);
     timedReplies_.add(reply_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
@@ -53,7 +50,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
     id_++;
 
     QList<RequestParameter> params;
-    QUrl url(QString(gameOnAPIUrl) + partUrl);
+    QUrl url(partUrl);
     QUrlQuery query(url);
     //params.append(RequestParameter(QByteArray("apiKey"), m_apiKey.toLatin1()));
     params.append(parameters);
@@ -65,6 +62,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
         query.addQueryItem(p.name, p.value);
     }
     url.setQuery(query);
+    qDebug() << "url" << url;
     status_ = Requesting;
     request_.setUrl(url);
 
@@ -72,7 +70,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
     request_.setHeader(QNetworkRequest::UserAgentHeader, "curl/7.30.0");
     request_.setRawHeader(QByteArray("Accept"), QByteArray("application/json"));
     QString auth = QString("%1:%2").arg(m_apiKey).arg(m_token);
-    qDebug() << "auth:" << auth << auth.toLatin1().toBase64();
+    //qDebug() << "auth:" << auth << auth.toLatin1().toBase64();
     request_.setRawHeader(QByteArray("Authorization"), QByteArray("Basic ") + auth.toLatin1().toBase64());
 
     return true;

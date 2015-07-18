@@ -2,6 +2,7 @@
 #define GAMEUPQT_H
 
 #include <QtQuick/QQuickItem>
+#include "gamer.h"
 
 class GameUpCommon;
 class GameUpQt: public QQuickItem {
@@ -16,6 +17,8 @@ public slots:
     void setApiKey(QString apiKey);
     bool ping();
     QString loginAnonymous(const QString &username);
+    Gamer *getGamer(const QString &username);
+    void addUserToken(const QString &username, const QString &token);
 
 signals:
     void apiKeyChanged(QString apiKey);

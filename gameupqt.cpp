@@ -6,6 +6,12 @@ GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
 , guCommon(Q_NULLPTR){
 }
 
+#define CHECK_GU_PRIVATE(ret) \
+    if (guCommon == Q_NULLPTR) { \
+    qWarning() << "Error allocating GameUpServer"; \
+    return ret ; \
+    }
+
 void GameUpQt::setApiKey(QString apiKey) {
     if (m_apiKey == apiKey)
         return;
@@ -24,19 +30,23 @@ void GameUpQt::setApiKey(QString apiKey) {
 }
 
 bool GameUpQt::ping() {
-    if (guCommon == Q_NULLPTR) {
-        qWarning() << "Error allocating GameUpServer";
-        return false;
-    }
+    CHECK_GU_PRIVATE(false);
     return guCommon->ping();
 }
 
 QString GameUpQt::loginAnonymous(const QString &username) {
-    if (guCommon == Q_NULLPTR) {
-        qWarning() << "Error allocating GameUpServer";
-        return QString("");
-    }
+    CHECK_GU_PRIVATE(QString(""));
     return guCommon->loginAnonymous(username);
+}
+
+Gamer *GameUpQt::getGamer(const QString &username) {
+    CHECK_GU_PRIVATE(Q_NULLPTR);
+    return guCommon->getGamer(username);
+}
+
+void GameUpQt::addUserToken(const QString &username, const QString &token) {
+    CHECK_GU_PRIVATE();
+    guCommon->addUserToken(username, token);
 }
 
 QString GameUpQt::apiKey() const {

@@ -1,5 +1,7 @@
 #include "gameupcommon.h"
 #include "gameonrequest.h"
+#include "gamer.h"
+
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -42,20 +44,44 @@ QString GameUpCommon::loginAnonymous(const QString &username) {
         qWarning() << "Invalid username hash length" << userhash.length();
         return token;
     }
-    QList<RequestParameter> params;
 
     QJsonObject jobj;
     jobj.insert("id", userhash);
     QJsonDocument jsdoc = QJsonDocument(jobj);
-    gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", params, jsdoc.toJson());
+    gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", QList<RequestParameter>(), jsdoc.toJson());
     loop.exec();
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject sett2 = jsdoc.object();
         QJsonValue value = sett2.value(QString("token"));
         token = value.toString();
+        gonRequest->setToken(token);
+        addUserToken(username, token);
     }
     return token;
+}
+
+Gamer *GameUpCommon::getGamer(const QString &username) {
+    Gamer *gamer = Q_NULLPTR;
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer", QList<RequestParameter>());
+    loop.exec();
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject sett2 = jsdoc.object();
+        QJsonValue nickvalue = sett2.value(QString("nickname"));
+        QJsonValue namevalue = sett2.value(QString("name"));
+        QJsonValue createdvalue = sett2.value(QString("created_at"));
+        gamer = new Gamer;
+        gamer->setNickname(nickvalue.toString());
+        gamer->setName(namevalue.toString());
+        gamer->setCreatedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(createdvalue.toDouble())));
+    }
+    return gamer;
+}
+
+void GameUpCommon::addUserToken(const QString &username, const QString &token) {
+    m_usersTokens[username] = token;
 }
 
 void GameUpCommon::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {

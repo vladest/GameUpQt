@@ -7,6 +7,7 @@
 #include <QEventLoop>
 
 class GameOnRequest;
+class Gamer;
 class GameUpCommon: public QObject
 {
 public:
@@ -14,6 +15,18 @@ public:
     QString apiKey() const;
     QNetworkAccessManager *manager();
     void setApiKey(const QString &apiKey);
+    /**
+     * get gamer info
+     * Gamer's token have to be already registered
+    */
+
+    Gamer *getGamer(const QString &username);
+    /**
+     * Fill up userbname token table
+     * In order to make GameUp API works its up to application to fill it in advance
+     * The library deals with gamer tokens, while user application deal with usernames
+     */
+    void addUserToken(const QString &username, const QString &token);
 
 signals:
 
@@ -28,12 +41,12 @@ private slots:
 
 private:
     QString m_apiKey;
-    QString m_token;
     QNetworkAccessManager m_manager;
     GameOnRequest *gonRequest;
     QEventLoop loop;
     QNetworkReply::NetworkError lasterror;
     QByteArray lastData;
+    QMap<QString, QString> m_usersTokens;
 };
 
 #endif // GAMEUPCOMMON_H

@@ -1,5 +1,5 @@
-#ifndef O2REPLYSERVER_H
-#define O2REPLYSERVER_H
+#ifndef GUREPLYSERVER_H
+#define GUREPLYSERVER_H
 
 #include <QTcpServer>
 #include <QMap>
@@ -7,12 +7,12 @@
 #include <QString>
 
 /// HTTP server to process authentication response.
-class O2ReplyServer: public QTcpServer {
+class GUReplyServer: public QTcpServer {
     Q_OBJECT
 
 public:
-    explicit O2ReplyServer(QObject *parent = 0);
-    ~O2ReplyServer();
+    explicit GUReplyServer(QObject *parent = 0);
+    ~GUReplyServer();
 
 signals:
     void verificationReceived(QMap<QString, QString>);
@@ -23,4 +23,4 @@ public slots:
     QMap<QString, QString> parseQueryParams(QByteArray *data);
 };
 
-#endif // O2REPLYSERVER_H
+#endif // GUREPLYSERVER_H

@@ -7,29 +7,27 @@
 #include <QStringList>
 #include <QUrl>
 #include <QDebug>
-#if QT_VERSION >= 0x050000
 #include <QUrlQuery>
-#endif
 
 #include "replyserver.h"
 
 #define trace() if (1) qDebug()
 // #define trace() if (0) qDebug()
 
-O2ReplyServer::O2ReplyServer(QObject *parent): QTcpServer(parent) {
+GUReplyServer::GUReplyServer(QObject *parent): QTcpServer(parent) {
     connect(this, SIGNAL(newConnection()), this, SLOT(onIncomingConnection()));
 }
 
-O2ReplyServer::~O2ReplyServer() {
+GUReplyServer::~GUReplyServer() {
 }
 
-void O2ReplyServer::onIncomingConnection() {
+void GUReplyServer::onIncomingConnection() {
     QTcpSocket* socket = nextPendingConnection();
     connect(socket, SIGNAL(readyRead()), this, SLOT(onBytesReady()), Qt::UniqueConnection);
     connect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
 }
 
-void O2ReplyServer::onBytesReady() {
+void GUReplyServer::onBytesReady() {
     QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
     if (!socket) {
         return;
@@ -50,8 +48,8 @@ void O2ReplyServer::onBytesReady() {
     emit verificationReceived(queryParams);
 }
 
-QMap<QString, QString> O2ReplyServer::parseQueryParams(QByteArray *data) {
-    trace() << "O2ReplyServer::parseQueryParams";
+QMap<QString, QString> GUReplyServer::parseQueryParams(QByteArray *data) {
+    trace() << "GUReplyServer::parseQueryParams";
 
     QString splitGetLine = QString(*data).split("\r\n").first();
     splitGetLine.remove("GET ");
@@ -61,12 +59,8 @@ QMap<QString, QString> O2ReplyServer::parseQueryParams(QByteArray *data) {
     QUrl getTokenUrl(splitGetLine);
 
     QList< QPair<QString, QString> > tokens;
-#if QT_VERSION < 0x050000
-    tokens = getTokenUrl.queryItems();
-#else
     QUrlQuery query(getTokenUrl);
     tokens = query.queryItems();
-#endif
     QMultiMap<QString, QString> queryParams;
     QPair<QString, QString> tokenPair;
     foreach (tokenPair, tokens) {

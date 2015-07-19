@@ -1,10 +1,11 @@
 #include "gameupcommon.h"
 #include "gameonrequest.h"
 #include "gamer.h"
-
+#include "leaderboard.h"
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 
 static const char gameOnAPIUrl[] = "https://api.gameup.io/v0/";
 static const char gameOnAccountAPIUrl[] = "https://accounts.gameup.io/v0/";
@@ -61,27 +62,52 @@ QString GameUpCommon::loginAnonymous(const QString &username) {
     return token;
 }
 
-Gamer *GameUpCommon::getGamer(const QString &username) {
-    Gamer *gamer = Q_NULLPTR;
+void GameUpCommon::getGamer(const QString &username, Gamer *gamer) {
+    if (!gamer)
+        return;
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->get(QString(gameOnAPIUrl) + "gamer", QList<RequestParameter>());
     loop.exec();
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
-        QJsonObject sett2 = jsdoc.object();
-        QJsonValue nickvalue = sett2.value(QString("nickname"));
-        QJsonValue namevalue = sett2.value(QString("name"));
-        QJsonValue createdvalue = sett2.value(QString("created_at"));
-        gamer = new Gamer;
+        QJsonObject jobj = jsdoc.object();
+        QJsonValue nickvalue = jobj.value(QString("nickname"));
+        QJsonValue namevalue = jobj.value(QString("name"));
+        QJsonValue createdvalue = jobj.value(QString("created_at"));
         gamer->setNickname(nickvalue.toString());
         gamer->setName(namevalue.toString());
         gamer->setCreatedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(createdvalue.toDouble())));
     }
-    return gamer;
 }
 
 void GameUpCommon::addUserToken(const QString &username, const QString &token) {
     m_usersTokens[username] = token;
+}
+
+void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard) {
+    if (!leaderboard)
+        return;
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>());
+    loop.exec();
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
+        leaderboard->setName(jobj.value(QString("name")).toString());
+        leaderboard->setPublic_id(jobj.value(QString("public_id")).toString());
+        leaderboard->setSort(jobj.value(QString("sort")).toString());
+        leaderboard->setType(jobj.value(QString("type")).toString());
+        QJsonArray jarr = jobj.value(QString("entries")).toArray();
+        leaderboard->clearEntries();
+        foreach (QJsonValue v, jarr) {
+            QJsonObject o = v.toObject();
+            LeaderboardEntry *e = new LeaderboardEntry;
+            e->setName(o.value(QString("name")).toString());
+            e->setScore(o.value(QString("score")).toInt());
+            e->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("score_at")).toDouble())));
+            leaderboard->addEntry(e);
+        }
+    }
 }
 
 void GameUpCommon::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {

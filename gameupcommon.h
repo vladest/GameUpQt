@@ -8,6 +8,7 @@
 
 class GameOnRequest;
 class Gamer;
+class Leaderboard;
 class GameUpCommon: public QObject
 {
 public:
@@ -15,18 +16,21 @@ public:
     QString apiKey() const;
     QNetworkAccessManager *manager();
     void setApiKey(const QString &apiKey);
+
     /**
      * get gamer info
      * Gamer's token have to be already registered
     */
 
-    Gamer *getGamer(const QString &username);
+    void getGamer(const QString &username, Gamer *gamer);
     /**
-     * Fill up userbname token table
+     * Fill up username token table
      * In order to make GameUp API works its up to application to fill it in advance
      * The library deals with gamer tokens, while user application deal with usernames
      */
     void addUserToken(const QString &username, const QString &token);
+
+    void getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard);
 
 signals:
 

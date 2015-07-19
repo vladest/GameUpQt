@@ -110,6 +110,15 @@ void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, 
     }
 }
 
+void GameUpCommon::setLeaderboardScore(const QString &username, const QString &lbid, int score) {
+    QJsonObject jobj;
+    jobj.insert("score", score);
+    QJsonDocument jsdoc = QJsonDocument(jobj);
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>(), jsdoc.toJson());
+    loop.exec();
+}
+
 void GameUpCommon::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {
     lasterror = error;
     lastData = data;

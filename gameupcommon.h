@@ -29,8 +29,8 @@ public:
      * The library deals with gamer tokens, while user application deal with usernames
      */
     void addUserToken(const QString &username, const QString &token);
-
     void getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard);
+    void setLeaderboardScore(const QString &username, const QString &lbid, int score);
 
 signals:
 

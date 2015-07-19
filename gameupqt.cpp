@@ -56,6 +56,11 @@ Leaderboard *GameUpQt::getLeaderboard(const QString &username) {
     return &m_leaderboard;
 }
 
+void GameUpQt::setLeaderboardScore(const QString &username, int score) {
+    CHECK_GU_PRIVATE();
+    guCommon->setLeaderboardScore(username, m_leaderboardID, score);
+}
+
 QString GameUpQt::apiKey() const {
     return m_apiKey;
 }

@@ -52,8 +52,15 @@ void GameUpQt::addUserToken(const QString &username, const QString &token) {
 
 Leaderboard *GameUpQt::getLeaderboard(const QString &username) {
     CHECK_GU_PRIVATE(Q_NULLPTR);
-    guCommon->getLeaderboard(username, m_leaderboardID, &m_leaderboard);
+    guCommon->getLeaderboard(username, m_leaderboardID, &m_leaderboard, Q_NULLPTR);
     return &m_leaderboard;
+}
+
+GamerLeaderboard *GameUpQt::getGamerLeaderboard(const QString &username) {
+    CHECK_GU_PRIVATE(Q_NULLPTR);
+    guCommon->getLeaderboard(username, m_leaderboardID, Q_NULLPTR, &m_gamer);
+    return m_gamer.gamerLeaderboard();
+
 }
 
 void GameUpQt::setLeaderboardScore(const QString &username, int score) {

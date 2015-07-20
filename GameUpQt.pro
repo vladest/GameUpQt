@@ -24,7 +24,9 @@ SOURCES += gameupqt.cpp \
     gureply.cpp \
     gameupcommon.cpp \
     gamer.cpp \
-    leaderboard.cpp
+    leaderboard.cpp \
+    gamerachievments.cpp \
+    gamerleaderboard.cpp
 
 HEADERS += gameupqt.h \
 #    gameupaccounts.h \
@@ -36,7 +38,9 @@ HEADERS += gameupqt.h \
     gureply.h \
     gameupcommon.h \
     gamer.h \
-    leaderboard.h
+    leaderboard.h \
+    gamerachievments.h \
+    gamerleaderboard.h
 unix {
     target.path = . #/usr/lib
     INSTALLS += target

@@ -7,11 +7,7 @@
 
 class LeaderboardEntry: public QObject {
     Q_OBJECT
-    /*
-     *         "name": "A gamer nickname",
-        "score": 1000,
-        "score_at": 1394019063468
-*/
+
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(int score READ score WRITE setScore  NOTIFY scoreChanged)
     Q_PROPERTY(QDateTime scoreAt READ scoreAt WRITE setScoreAt NOTIFY scoreAtChanged)
@@ -44,12 +40,7 @@ private:
 class Leaderboard : public QObject
 {
     Q_OBJECT
-    /*
-     *     "name": "The leaderboard's name",
-    "public_id": "abc123A1",
-    "sort": "desc",
-    "type": "rank",
-*/
+
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString public_id READ public_id WRITE setPublic_id NOTIFY public_idChanged)
     Q_PROPERTY(QString sort READ sort WRITE setSort NOTIFY sortChanged)

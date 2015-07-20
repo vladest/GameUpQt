@@ -29,6 +29,7 @@ public slots:
     void addUserToken(const QString &username, const QString &token);
     Leaderboard *getLeaderboard(const QString &username);
     GamerLeaderboard *getGamerLeaderboard(const QString &username);
+    void getGamerAchievments(const QString &username);
     void setLeaderboardScore(const QString &username, int score);
 
 signals:

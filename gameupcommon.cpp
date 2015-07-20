@@ -84,9 +84,46 @@ void GameUpCommon::addUserToken(const QString &username, const QString &token) {
     m_usersTokens[username] = token;
 }
 
-void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer) {
-    if (!leaderboard)
+void GameUpCommon::getGamerAchievments(const QString &username, Gamer *gamer) {
+    if (Q_NULLPTR == gamer)
         return;
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/achievement", QList<RequestParameter>());
+    loop.exec();
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject jobj = jsdoc.object();
+        QJsonArray jarr = jobj.value(QString("achievements")).toArray();
+        gamer->clearAchievments();
+        foreach (QJsonValue v, jarr) {
+            QJsonObject o = v.toObject();
+            GamerAchievments *ach = new GamerAchievments;
+            ach->setPublicID(o.value(QString("public_id")).toString());
+            ach->setName(o.value(QString("name")).toString());
+            ach->setDescription(o.value(QString("description")).toString());
+            QString type = o.value(QString("type")).toString();
+            if (type == "normal")
+                ach->setType(GamerAchievments::Normal);
+            else
+                ach->setType(GamerAchievments::Incremental);
+            QString state = o.value(QString("state")).toString();
+            if (state == "visible")
+                ach->setState(GamerAchievments::Visible);
+            else if (state == "secret")
+                ach->setState(GamerAchievments::Secret);
+            else
+                ach->setState(GamerAchievments::Hidden);
+            ach->setPoints(o.value(QString("points")).toInt());
+            ach->setRequiredCount(o.value(QString("required_count")).toInt());
+            ach->setCount(o.value(QString("count")).toInt());
+            ach->setProgressAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("progress_at")).toDouble())));
+            ach->setCompletedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("completed_at")).toDouble())));
+            gamer->addAchievment(ach);
+        }
+    }
+}
+
+void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer) {
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>());
     loop.exec();

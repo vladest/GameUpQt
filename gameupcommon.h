@@ -31,7 +31,7 @@ public:
     void addUserToken(const QString &username, const QString &token);
     void getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer);
     void setLeaderboardScore(const QString &username, const QString &lbid, int score);
-
+    void getGamerAchievments(const QString &username, Gamer *gamer);
 signals:
 
 

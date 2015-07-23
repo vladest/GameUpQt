@@ -1,24 +1,19 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2015-06-28T15:30:49
-#
-#-------------------------------------------------
-
 QT       += network qml quick
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
 QT       -= gui
 
-TARGET = GameUpQt
+TARGET = $$qtLibraryTarget(GameUpQt)
+contains(QT_CONFIG, reduce_exports): CONFIG += hide_symbols
 TEMPLATE = lib
-CONFIG += staticlib
+#CONFIG += staticlib
+CONFIG += plugin
+TARGETPATH = GameUpQt
+API_VER=1.0
+
 
 SOURCES += gameupqt.cpp \
-#    gameupaccounts.cpp \
-#    gameupgamer.cpp \
-#    gameupgame.cpp \
-#    gameupserver.cpp \
     gameonrequest.cpp \
     replyserver.cpp \
     gureply.cpp \
@@ -26,13 +21,10 @@ SOURCES += gameupqt.cpp \
     gamer.cpp \
     leaderboard.cpp \
     gamerachievments.cpp \
-    gamerleaderboard.cpp
+    gamerleaderboard.cpp \
+    gameupqtplugin.cpp
 
 HEADERS += gameupqt.h \
-#    gameupaccounts.h \
-#    gameupgamer.h \
-#    gameupgame.h \
-#    gameupserver.h \
     gameonrequest.h \
     replyserver.h \
     gureply.h \
@@ -40,8 +32,14 @@ HEADERS += gameupqt.h \
     gamer.h \
     leaderboard.h \
     gamerachievments.h \
-    gamerleaderboard.h
-unix {
-    target.path = . #/usr/lib
-    INSTALLS += target
-}
+    gamerleaderboard.h \
+    gameupqtplugin.h
+
+importPath = $$[QT_INSTALL_QML]/$$replace(TARGETPATH, \\., /).$$API_VER
+target.path = $${importPath}
+
+qmldir.path = $${importPath}
+qmldir.files += $$PWD/qmldir
+
+
+INSTALLS += target qmldir

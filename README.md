@@ -10,3 +10,8 @@ TODO:
 - [ ] Implement async mode
 - [ ] Implement OAuth2 based authentifications (Google/Twitter/FB)
 - [ ] Implement GameUp authentification
+
+Howto build:
+ * Install latest Qt SDK for your platform from here: http://www.qt.io/download/
+ * run "<path to qmake>/qmake"
+ * run "make; make install"

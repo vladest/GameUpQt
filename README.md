@@ -6,10 +6,11 @@ The code is intended to be multiplatform. No any platform specific code was used
 Since the code is written at spare time, not all features from GameUp implemented at the moment. Gimme a mail with your wishes
 
 TODO:
-- [ ] Write en example
+- [x] Write en example
 - [ ] Implement async mode
 - [ ] Implement OAuth2 based authentifications (Google/Twitter/FB)
 - [ ] Implement GameUp authentification
+- [ ] Implement missed GameUp functionality
 
 Howto build:
  * Install latest Qt SDK for your platform from here: http://www.qt.io/download/

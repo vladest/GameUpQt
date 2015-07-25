@@ -5,7 +5,7 @@
 #include "gamer.h"
 #include "leaderboard.h"
 
-class GameUpCommon;
+class GameUpQtPrivate;
 class GameUpQt: public QQuickItem {
 
     Q_OBJECT
@@ -13,6 +13,8 @@ class GameUpQt: public QQuickItem {
     Q_PROPERTY(QString apiKey READ apiKey WRITE setApiKey NOTIFY apiKeyChanged)
     Q_PROPERTY(QString achievmentsID READ achievmentsID WRITE setAchievmentsID NOTIFY achievmentsIDChanged)
     Q_PROPERTY(QString leaderboardID READ leaderboardID WRITE setLeaderboardID NOTIFY leaderboardIDChanged)
+    Q_PROPERTY(bool asyncMode READ asyncMode WRITE setAsyncMode NOTIFY asyncModeChanged)
+
 public:
     GameUpQt(QQuickItem *parent = 0);
     QString apiKey() const;
@@ -21,6 +23,8 @@ public:
     void setApiKey(QString apiKey);
     void setAchievmentsID(QString achievmentsID);
     void setLeaderboardID(QString leaderboardID);
+    bool asyncMode() const;
+
 
 public slots:
     bool ping();
@@ -31,19 +35,24 @@ public slots:
     GamerLeaderboard *getGamerLeaderboard(const QString &username);
     void getGamerAchievments(const QString &username);
     void setLeaderboardScore(const QString &username, int score);
+    void setAsyncMode(bool asyncMode);
 
 signals:
     void apiKeyChanged(QString apiKey);
     void achievmentsIDChanged(QString achievmentsID);
     void leaderboardIDChanged(QString leaderboardID);
+    void asyncModeChanged(bool asyncMode);
 
 private:
+    Q_DECLARE_PRIVATE(GameUpQt)
+    GameUpQtPrivate *d_ptr;
+
     QString m_apiKey;
-    GameUpCommon *guCommon;
     QString m_achievmentsID;
     QString m_leaderboardID;
     Gamer m_gamer;
     Leaderboard m_leaderboard;
+    bool m_asyncMode;
 };
 
 #endif // GAMEUPQT_H

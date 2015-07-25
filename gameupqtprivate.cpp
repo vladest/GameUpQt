@@ -1,4 +1,4 @@
-#include "gameupcommon.h"
+#include "gameupqt_p.h"
 #include "gameonrequest.h"
 #include "gamer.h"
 #include "leaderboard.h"
@@ -10,27 +10,27 @@
 static const char gameOnAPIUrl[] = "https://api.gameup.io/v0/";
 static const char gameOnAccountAPIUrl[] = "https://accounts.gameup.io/v0/";
 
-GameUpCommon::GameUpCommon(QObject *parent): QObject(parent)
+GameUpQtPrivate::GameUpQtPrivate(QObject *parent): QObject(parent)
   , gonRequest(Q_NULLPTR)
   , lasterror(QNetworkReply::NoError){
 
 }
 
-QString GameUpCommon::apiKey() const {
+QString GameUpQtPrivate::apiKey() const {
     return m_apiKey;
 }
 
-QNetworkAccessManager *GameUpCommon::manager() {
+QNetworkAccessManager *GameUpQtPrivate::manager() {
     return &m_manager;
 }
 
-void GameUpCommon::setApiKey(const QString &apiKey) {
+void GameUpQtPrivate::setApiKey(const QString &apiKey) {
     m_apiKey = apiKey;
     gonRequest = new GameOnRequest(m_apiKey, &m_manager, this);
-    connect(gonRequest, &GameOnRequest::finished, this, &GameUpCommon::reqfinished);
+    connect(gonRequest, &GameOnRequest::finished, this, &GameUpQtPrivate::reqfinished);
 }
 
-bool GameUpCommon::ping() {
+bool GameUpQtPrivate::ping() {
     if (Q_NULLPTR == gonRequest)
         return false;
     gonRequest->get(QString(gameOnAPIUrl), QList<RequestParameter>());
@@ -38,7 +38,7 @@ bool GameUpCommon::ping() {
     return (lasterror == QNetworkReply::NoError);
 }
 
-QString GameUpCommon::loginAnonymous(const QString &username) {
+QString GameUpQtPrivate::loginAnonymous(const QString &username) {
     QString token;
     QString userhash = QString(QCryptographicHash::hash((username.toLocal8Bit()),QCryptographicHash::Md5).toHex());
     if (userhash.length() < 32 || userhash.length() > 128) {
@@ -62,7 +62,13 @@ QString GameUpCommon::loginAnonymous(const QString &username) {
     return token;
 }
 
-void GameUpCommon::getGamer(const QString &username, Gamer *gamer) {
+QString GameUpQtPrivate::loginGameup(const QString &username) {
+    gonRequest->setToken(m_usersTokens[username]);
+    //TODO: need to implement multiplatform QtWebEngine (only desktop for now) or QtWebView (only iOS/Android/OSX atm) or redirect_uri on server side
+    return QString("");
+}
+
+void GameUpQtPrivate::getGamer(const QString &username, Gamer *gamer) {
     if (!gamer)
         return;
     gonRequest->setToken(m_usersTokens[username]);
@@ -80,11 +86,11 @@ void GameUpCommon::getGamer(const QString &username, Gamer *gamer) {
     }
 }
 
-void GameUpCommon::addUserToken(const QString &username, const QString &token) {
+void GameUpQtPrivate::addUserToken(const QString &username, const QString &token) {
     m_usersTokens[username] = token;
 }
 
-void GameUpCommon::getGamerAchievments(const QString &username, Gamer *gamer) {
+void GameUpQtPrivate::getGamerAchievments(const QString &username, Gamer *gamer) {
     if (Q_NULLPTR == gamer)
         return;
     gonRequest->setToken(m_usersTokens[username]);
@@ -123,7 +129,7 @@ void GameUpCommon::getGamerAchievments(const QString &username, Gamer *gamer) {
     }
 }
 
-void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer) {
+void GameUpQtPrivate::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer) {
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>());
     loop.exec();
@@ -162,7 +168,7 @@ void GameUpCommon::getLeaderboard(const QString &username, const QString &lbid, 
     }
 }
 
-void GameUpCommon::setLeaderboardScore(const QString &username, const QString &lbid, int score) {
+void GameUpQtPrivate::setLeaderboardScore(const QString &username, const QString &lbid, int score) {
     QJsonObject jobj;
     jobj.insert("score", score);
     QJsonDocument jsdoc = QJsonDocument(jobj);
@@ -171,7 +177,7 @@ void GameUpCommon::setLeaderboardScore(const QString &username, const QString &l
     loop.exec();
 }
 
-void GameUpCommon::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {
+void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {
     lasterror = error;
     lastData = data;
     if (loop.isRunning())

@@ -3,16 +3,17 @@
 
 #include <QObject>
 #include <QNetworkAccessManager>
-#include<QNetworkReply>
+#include <QNetworkReply>
 #include <QEventLoop>
 
+class GameUpQt;
 class GameOnRequest;
 class Gamer;
 class Leaderboard;
-class GameUpCommon: public QObject
+class GameUpQtPrivate: public QObject
 {
 public:
-    GameUpCommon(QObject *parent = 0);
+    GameUpQtPrivate(QObject *parent = 0);
     QString apiKey() const;
     QNetworkAccessManager *manager();
     void setApiKey(const QString &apiKey);
@@ -32,12 +33,13 @@ public:
     void getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer);
     void setLeaderboardScore(const QString &username, const QString &lbid, int score);
     void getGamerAchievments(const QString &username, Gamer *gamer);
-signals:
-
-
-public slots:
     bool ping();
     QString loginAnonymous(const QString &username);
+    QString loginGameup(const QString &username);
+
+public:
+    Q_DECLARE_PUBLIC(GameUpQt)
+    GameUpQt *q_ptr;
 
 private slots:
     void reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data);

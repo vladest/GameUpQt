@@ -17,23 +17,23 @@ SOURCES += gameupqt.cpp \
     gameonrequest.cpp \
     replyserver.cpp \
     gureply.cpp \
-    gameupcommon.cpp \
     gamer.cpp \
     leaderboard.cpp \
     gamerachievments.cpp \
     gamerleaderboard.cpp \
-    gameupqtplugin.cpp
+    gameupqtplugin.cpp \
+    gameupqtprivate.cpp
 
 HEADERS += gameupqt.h \
     gameonrequest.h \
     replyserver.h \
     gureply.h \
-    gameupcommon.h \
     gamer.h \
     leaderboard.h \
     gamerachievments.h \
     gamerleaderboard.h \
-    gameupqtplugin.h
+    gameupqtplugin.h \
+    gameupqt_p.h
 
 importPath = $$[QT_INSTALL_QML]/$$replace(TARGETPATH, \\., /).$$API_VER
 target.path = $${importPath}

@@ -2,12 +2,16 @@
 #define GAMEUPQT_H
 
 #include <QtQuick/QQuickItem>
-#include "gamer.h"
-#include "leaderboard.h"
-
 
 class GameUpQtPrivate;
-class QQuickWebView;
+class Gamer;
+class Leaderboard;
+
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    class QQuickWebEngineView;
+#else
+    class QQuickWebView;
+#endif
 
 class GameUpQt: public QQuickItem {
 
@@ -16,7 +20,11 @@ class GameUpQt: public QQuickItem {
     Q_PROPERTY(QString apiKey READ apiKey WRITE setApiKey NOTIFY apiKeyChanged)
     Q_PROPERTY(QString leaderboardID READ leaderboardID WRITE setLeaderboardID NOTIFY leaderboardIDChanged)
     Q_PROPERTY(bool asyncMode READ asyncMode WRITE setAsyncMode NOTIFY asyncModeChanged)
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    Q_PROPERTY(QQuickWebEngineView* webView READ webView WRITE setWebView NOTIFY webViewChanged)
+#else
     Q_PROPERTY(QQuickWebView* webView READ webView WRITE setWebView NOTIFY webViewChanged)
+#endif
 
 public:
     GameUpQt(QQuickItem *parent = 0);
@@ -25,8 +33,11 @@ public:
     void setApiKey(QString apiKey);
     void setLeaderboardID(QString leaderboardID);
     bool asyncMode() const;
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    QQuickWebEngineView* webView() const;
+#else
     QQuickWebView* webView() const;
-
+#endif
 public slots:
     bool ping();
     QString loginAnonymous(const QString &username);
@@ -37,13 +48,16 @@ public slots:
     void updateGamerAchievments(const QString &username);
     void setLeaderboardScore(const QString &username, int score);
     void setAsyncMode(bool asyncMode);
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    void setWebView(QQuickWebEngineView* webView);
+#else
     void setWebView(QQuickWebView* webView);
-
+#endif
 signals:
     void apiKeyChanged(QString apiKey);
     void leaderboardIDChanged(QString leaderboardID);
     void asyncModeChanged(bool asyncMode);
-    void webViewChanged(QQuickWebView* webView);
+    void webViewChanged();
 
 private:
     Q_DECLARE_PRIVATE(GameUpQt)

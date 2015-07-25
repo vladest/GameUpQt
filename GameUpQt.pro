@@ -15,6 +15,11 @@ API_VER=1.0
 #Qt 5.5 and higher
 QT += webview-private
 
+!osx:qtHaveModule(webengine) {
+        QT += webengine
+        DEFINES += QT_WEBVIEW_WEBENGINE_BACKEND
+}
+
 SOURCES += gameupqt.cpp \
     gameonrequest.cpp \
     replyserver.cpp \

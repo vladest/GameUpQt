@@ -1,5 +1,7 @@
 #include "gameupqtplugin.h"
 #include "gameupqt.h"
+#include "gamer.h"
+#include "leaderboard.h"
 
 const int versionMajor = 1;
 const int versionMinor = 0;

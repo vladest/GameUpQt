@@ -1,5 +1,7 @@
 #include "gameupqt.h"
 #include "gameupqt_p.h"
+
+#include "QtWebView/QQuickWebView"
 #include <QDebug>
 
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
@@ -59,11 +61,14 @@ void GameUpQt::setAsyncMode(bool asyncMode) {
     d->setAsyncMode(asyncMode);
     emit asyncModeChanged(asyncMode);
 }
-
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+void GameUpQt::setWebView(QQuickWebEngineView *webView) {
+#else
 void GameUpQt::setWebView(QQuickWebView *webView) {
+#endif
     Q_D(GameUpQt);
     d->setWebView(webView);
-    emit webViewChanged(webView);
+    emit webViewChanged();
 }
 
 QString GameUpQt::apiKey() const {
@@ -87,7 +92,11 @@ bool GameUpQt::asyncMode() const {
     return d->getAsyncMode();
 }
 
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+QQuickWebEngineView *GameUpQt::webView() const {
+#else
 QQuickWebView *GameUpQt::webView() const {
+#endif
     Q_D(const GameUpQt);
     return d->webView();
 }

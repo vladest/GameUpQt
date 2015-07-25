@@ -69,11 +69,19 @@ QString GameUpQtPrivate::loginGameup(const QString &username) {
     return QString("");
 }
 
-QQuickWebView *GameUpQtPrivate::webView() const {
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+QQuickWebEngineView *GameUpQtPrivate::webView() const {
+#else
+QQuickWebView *GameUpQt::webView() const {
+#endif
     return m_webView;
 }
 
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+void GameUpQtPrivate::setWebView(QQuickWebEngineView *webView) {
+#else
 void GameUpQtPrivate::setWebView(QQuickWebView *webView) {
+#endif
     m_webView = webView;
 }
 

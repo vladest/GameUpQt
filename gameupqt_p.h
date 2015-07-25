@@ -5,7 +5,6 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QEventLoop>
-#include "QtWebView/QQuickWebView"
 #include "gamer.h"
 #include "leaderboard.h"
 
@@ -13,6 +12,13 @@ class GameUpQt;
 class GameOnRequest;
 class Gamer;
 class Leaderboard;
+
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    class QQuickWebEngineView;
+#else
+    class QQuickWebView;
+#endif
+
 class GameUpQtPrivate: public QObject
 {
 public:
@@ -40,10 +46,13 @@ public:
     bool ping();
     QString loginAnonymous(const QString &username);
     QString loginGameup(const QString &username);
-
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    QQuickWebEngineView* webView() const;
+    void setWebView(QQuickWebEngineView* webView);
+#else
     QQuickWebView* webView() const;
     void setWebView(QQuickWebView* webView);
-
+#endif
     QString getLeaderboardID() const;
     void setLeaderboardID(const QString &leaderboardID);
 
@@ -65,7 +74,12 @@ private:
     QNetworkReply::NetworkError lasterror;
     QByteArray lastData;
     QMap<QString, QString> m_usersTokens;
+
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    QQuickWebEngineView* m_webView;
+#else
     QQuickWebView* m_webView;
+#endif
     QString m_achievmentsID;
     QString m_leaderboardID;
     Gamer m_gamer;

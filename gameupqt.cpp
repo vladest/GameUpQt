@@ -3,19 +3,13 @@
 #include <QDebug>
 
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
-  , d_ptr(new GameUpQtPrivate),
-    m_asyncMode(true){
-    d_ptr->q_ptr = this;
+  , d_ptr(new GameUpQtPrivate){
 }
 
 void GameUpQt::setApiKey(QString apiKey) {
-    if (m_apiKey == apiKey)
-        return;
-
-    m_apiKey = apiKey;
-    emit apiKeyChanged(apiKey);
     Q_D(GameUpQt);
-    d->setApiKey(m_apiKey);
+    d->setApiKey(apiKey);
+    emit apiKeyChanged(apiKey);
 }
 
 bool GameUpQt::ping() {
@@ -30,8 +24,8 @@ QString GameUpQt::loginAnonymous(const QString &username) {
 
 Gamer *GameUpQt::getGamer(const QString &username) {
     Q_D(GameUpQt);
-    d->getGamer(username, &m_gamer);
-    return &m_gamer;
+    d->updateGamerData(username);
+    return d->getGamer();
 }
 
 void GameUpQt::addUserToken(const QString &username, const QString &token) {
@@ -41,62 +35,60 @@ void GameUpQt::addUserToken(const QString &username, const QString &token) {
 
 Leaderboard *GameUpQt::getLeaderboard(const QString &username) {
     Q_D(GameUpQt);
-    d->getLeaderboard(username, m_leaderboardID, &m_leaderboard, Q_NULLPTR);
-    return &m_leaderboard;
+    d->updateLeaderboard(username);
+    return d->getLeaderboard();
 }
 
-GamerLeaderboard *GameUpQt::getGamerLeaderboard(const QString &username) {
+void GameUpQt::updateGamerLeaderboard(const QString &username) {
     Q_D(GameUpQt);
-    d->getLeaderboard(username, m_leaderboardID, Q_NULLPTR, &m_gamer);
-    return m_gamer.gamerLeaderboard();
+    d->updateLeaderboard(username);
 }
 
-void GameUpQt::getGamerAchievments(const QString &username) {
+void GameUpQt::updateGamerAchievments(const QString &username) {
     Q_D(GameUpQt);
-    d->getGamerAchievments(username, &m_gamer);
+    d->updateGamerAchievments(username);
 }
 
 void GameUpQt::setLeaderboardScore(const QString &username, int score) {
     Q_D(GameUpQt);
-    d->setLeaderboardScore(username, m_leaderboardID, score);
+    d->setLeaderboardScore(username, score);
 }
 
 void GameUpQt::setAsyncMode(bool asyncMode) {
-    if (m_asyncMode == asyncMode)
-        return;
-
-    m_asyncMode = asyncMode;
+    Q_D(GameUpQt);
+    d->setAsyncMode(asyncMode);
     emit asyncModeChanged(asyncMode);
 }
 
-QString GameUpQt::apiKey() const {
-    return m_apiKey;
+void GameUpQt::setWebView(QQuickWebView *webView) {
+    Q_D(GameUpQt);
+    d->setWebView(webView);
+    emit webViewChanged(webView);
 }
 
-QString GameUpQt::achievmentsID() const {
-    return m_achievmentsID;
+QString GameUpQt::apiKey() const {
+    Q_D(const GameUpQt);
+    return d->apiKey();
 }
 
 QString GameUpQt::leaderboardID() const {
-    return m_leaderboardID;
-}
-
-void GameUpQt::setAchievmentsID(QString achievmentsID) {
-    if (m_achievmentsID == achievmentsID)
-        return;
-
-    m_achievmentsID = achievmentsID;
-    emit achievmentsIDChanged(achievmentsID);
+    Q_D(const GameUpQt);
+    return d->getLeaderboardID();
 }
 
 void GameUpQt::setLeaderboardID(QString leaderboardID) {
-    if (m_leaderboardID == leaderboardID)
-        return;
-
-    m_leaderboardID = leaderboardID;
+    Q_D(GameUpQt);
+    d->setLeaderboardID(leaderboardID);
     emit leaderboardIDChanged(leaderboardID);
 }
 
 bool GameUpQt::asyncMode() const {
-    return m_asyncMode;
+    Q_D(const GameUpQt);
+    return d->getAsyncMode();
 }
+
+QQuickWebView *GameUpQt::webView() const {
+    Q_D(const GameUpQt);
+    return d->webView();
+}
+

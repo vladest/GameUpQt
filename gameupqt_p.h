@@ -5,6 +5,9 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QEventLoop>
+#include "QtWebView/QQuickWebView"
+#include "gamer.h"
+#include "leaderboard.h"
 
 class GameUpQt;
 class GameOnRequest;
@@ -23,23 +26,32 @@ public:
      * Gamer's token have to be already registered
     */
 
-    void getGamer(const QString &username, Gamer *gamer);
+    void updateGamerData(const QString &username);
     /**
      * Fill up username token table
      * In order to make GameUp API works its up to application to fill it in advance
      * The library deals with gamer tokens, while user application deal with usernames
      */
     void addUserToken(const QString &username, const QString &token);
-    void getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer);
-    void setLeaderboardScore(const QString &username, const QString &lbid, int score);
-    void getGamerAchievments(const QString &username, Gamer *gamer);
+    void updateLeaderboard(const QString &username);
+    void updateGamerRank(const QString &username);
+    void setLeaderboardScore(const QString &username, int score);
+    void updateGamerAchievments(const QString &username);
     bool ping();
     QString loginAnonymous(const QString &username);
     QString loginGameup(const QString &username);
 
-public:
-    Q_DECLARE_PUBLIC(GameUpQt)
-    GameUpQt *q_ptr;
+    QQuickWebView* webView() const;
+    void setWebView(QQuickWebView* webView);
+
+    QString getLeaderboardID() const;
+    void setLeaderboardID(const QString &leaderboardID);
+
+    Gamer *getGamer();
+    Leaderboard *getLeaderboard();
+
+    bool getAsyncMode() const;
+    void setAsyncMode(bool asyncMode);
 
 private slots:
     void reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data);
@@ -53,6 +65,12 @@ private:
     QNetworkReply::NetworkError lasterror;
     QByteArray lastData;
     QMap<QString, QString> m_usersTokens;
+    QQuickWebView* m_webView;
+    QString m_achievmentsID;
+    QString m_leaderboardID;
+    Gamer m_gamer;
+    Leaderboard m_leaderboard;
+    bool m_asyncMode;
 };
 
 #endif // GAMEUPCOMMON_H

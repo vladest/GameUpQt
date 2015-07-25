@@ -16,8 +16,10 @@ Window {
             userToken = gameup.loginAnonymous(user)
             if (userToken !== "") {
                 gameup.addUserToken(user, userToken) //fillup table to associate user with its GameUp token
+                gameup.updateGamerAchievments(user)
                 gamer = gameup.getGamer(user) //get Gamer istance for given username
                 console.log("gamer:", gamer.name, gamer.nickname, gamer.createdAt)
+                gameup.updateGamerLeaderboard(user)
                 leaderboard = gameup.getLeaderboard(user) //get leaderboard for given game
                 console.log("leaderboard name", leaderboard.name)
             }

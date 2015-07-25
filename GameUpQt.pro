@@ -12,6 +12,8 @@ CONFIG += plugin
 TARGETPATH = GameUpQt
 API_VER=1.0
 
+#Qt 5.5 and higher
+QT += webview-private
 
 SOURCES += gameupqt.cpp \
     gameonrequest.cpp \

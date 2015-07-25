@@ -12,7 +12,8 @@ static const char gameOnAccountAPIUrl[] = "https://accounts.gameup.io/v0/";
 
 GameUpQtPrivate::GameUpQtPrivate(QObject *parent): QObject(parent)
   , gonRequest(Q_NULLPTR)
-  , lasterror(QNetworkReply::NoError){
+  , lasterror(QNetworkReply::NoError)
+  , m_asyncMode(false) {
 
 }
 
@@ -68,9 +69,39 @@ QString GameUpQtPrivate::loginGameup(const QString &username) {
     return QString("");
 }
 
-void GameUpQtPrivate::getGamer(const QString &username, Gamer *gamer) {
-    if (!gamer)
-        return;
+QQuickWebView *GameUpQtPrivate::webView() const {
+    return m_webView;
+}
+
+void GameUpQtPrivate::setWebView(QQuickWebView *webView) {
+    m_webView = webView;
+}
+
+Gamer *GameUpQtPrivate::getGamer() {
+    return &m_gamer;
+}
+
+QString GameUpQtPrivate::getLeaderboardID() const {
+    return m_leaderboardID;
+}
+
+void GameUpQtPrivate::setLeaderboardID(const QString &leaderboardID) {
+    m_leaderboardID = leaderboardID;
+}
+
+Leaderboard *GameUpQtPrivate::getLeaderboard() {
+    return &m_leaderboard;
+}
+
+bool GameUpQtPrivate::getAsyncMode() const {
+    return m_asyncMode;
+}
+
+void GameUpQtPrivate::setAsyncMode(bool asyncMode) {
+    m_asyncMode = asyncMode;
+}
+
+void GameUpQtPrivate::updateGamerData(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->get(QString(gameOnAPIUrl) + "gamer", QList<RequestParameter>());
     loop.exec();
@@ -80,9 +111,9 @@ void GameUpQtPrivate::getGamer(const QString &username, Gamer *gamer) {
         QJsonValue nickvalue = jobj.value(QString("nickname"));
         QJsonValue namevalue = jobj.value(QString("name"));
         QJsonValue createdvalue = jobj.value(QString("created_at"));
-        gamer->setNickname(nickvalue.toString());
-        gamer->setName(namevalue.toString());
-        gamer->setCreatedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(createdvalue.toDouble())));
+        m_gamer.setNickname(nickvalue.toString());
+        m_gamer.setName(namevalue.toString());
+        m_gamer.setCreatedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(createdvalue.toDouble())));
     }
 }
 
@@ -90,9 +121,7 @@ void GameUpQtPrivate::addUserToken(const QString &username, const QString &token
     m_usersTokens[username] = token;
 }
 
-void GameUpQtPrivate::getGamerAchievments(const QString &username, Gamer *gamer) {
-    if (Q_NULLPTR == gamer)
-        return;
+void GameUpQtPrivate::updateGamerAchievments(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->get(QString(gameOnAPIUrl) + "gamer/achievement", QList<RequestParameter>());
     loop.exec();
@@ -100,7 +129,7 @@ void GameUpQtPrivate::getGamerAchievments(const QString &username, Gamer *gamer)
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject jobj = jsdoc.object();
         QJsonArray jarr = jobj.value(QString("achievements")).toArray();
-        gamer->clearAchievments();
+        m_gamer.clearAchievments();
         foreach (QJsonValue v, jarr) {
             QJsonObject o = v.toObject();
             GamerAchievments *ach = new GamerAchievments;
@@ -124,56 +153,61 @@ void GameUpQtPrivate::getGamerAchievments(const QString &username, Gamer *gamer)
             ach->setCount(o.value(QString("count")).toInt());
             ach->setProgressAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("progress_at")).toDouble())));
             ach->setCompletedAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("completed_at")).toDouble())));
-            gamer->addAchievment(ach);
+            m_gamer.addAchievment(ach);
         }
     }
 }
 
-void GameUpQtPrivate::getLeaderboard(const QString &username, const QString &lbid, Leaderboard *leaderboard, Gamer *gamer) {
+void GameUpQtPrivate::updateLeaderboard(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>());
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>());
     loop.exec();
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
-        if (leaderboard != Q_NULLPTR) {
-            QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
-            leaderboard->setName(jobj.value(QString("name")).toString());
-            leaderboard->setPublic_id(jobj.value(QString("public_id")).toString());
-            leaderboard->setSort(jobj.value(QString("sort")).toString());
-            leaderboard->setType(jobj.value(QString("type")).toString());
-            QJsonArray jarr = jobj.value(QString("entries")).toArray();
-            leaderboard->clearEntries();
-            foreach (QJsonValue v, jarr) {
-                QJsonObject o = v.toObject();
-                LeaderboardEntry *e = new LeaderboardEntry;
-                e->setName(o.value(QString("name")).toString());
-                e->setScore(o.value(QString("score")).toInt());
-                e->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("score_at")).toDouble())));
-                leaderboard->addEntry(e);
-            }
-        }
-        if (gamer != Q_NULLPTR) {
-            QJsonObject jobj = jsdoc.object().value("rank").toObject();
-            gamer->gamerLeaderboard()->setRank(jobj.value(QString("rank")).toInt());
-            gamer->gamerLeaderboard()->setRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("rank_at")).toDouble())));
-            gamer->gamerLeaderboard()->setScore(jobj.value(QString("score")).toInt());
-            gamer->gamerLeaderboard()->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("score_at")).toDouble())));
-            gamer->gamerLeaderboard()->setLastScore(jobj.value(QString("last_score")).toInt());
-            gamer->gamerLeaderboard()->setLastScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("last_score_at")).toDouble())));
-            gamer->gamerLeaderboard()->setLastRank(jobj.value(QString("last_rank")).toInt());
-            gamer->gamerLeaderboard()->setLastRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("last_rank_at")).toDouble())));
-            gamer->gamerLeaderboard()->setBestRank(jobj.value(QString("best_rank")).toInt());
-            gamer->gamerLeaderboard()->setBestRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("best_rank_at")).toDouble())));
+        QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
+        m_leaderboard.setName(jobj.value(QString("name")).toString());
+        m_leaderboard.setPublic_id(jobj.value(QString("public_id")).toString());
+        m_leaderboard.setSort(jobj.value(QString("sort")).toString());
+        m_leaderboard.setType(jobj.value(QString("type")).toString());
+        QJsonArray jarr = jobj.value(QString("entries")).toArray();
+        m_leaderboard.clearEntries();
+        foreach (QJsonValue v, jarr) {
+            QJsonObject o = v.toObject();
+            LeaderboardEntry *e = new LeaderboardEntry;
+            e->setName(o.value(QString("name")).toString());
+            e->setScore(o.value(QString("score")).toInt());
+            e->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("score_at")).toDouble())));
+            m_leaderboard.addEntry(e);
         }
     }
 }
 
-void GameUpQtPrivate::setLeaderboardScore(const QString &username, const QString &lbid, int score) {
+void GameUpQtPrivate::updateGamerRank(const QString &username) {
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>());
+    loop.exec();
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject jobj = jsdoc.object().value("rank").toObject();
+        m_gamer.gamerLeaderboard()->setRank(jobj.value(QString("rank")).toInt());
+        m_gamer.gamerLeaderboard()->setRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("rank_at")).toDouble())));
+        m_gamer.gamerLeaderboard()->setScore(jobj.value(QString("score")).toInt());
+        m_gamer.gamerLeaderboard()->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("score_at")).toDouble())));
+        m_gamer.gamerLeaderboard()->setLastScore(jobj.value(QString("last_score")).toInt());
+        m_gamer.gamerLeaderboard()->setLastScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("last_score_at")).toDouble())));
+        m_gamer.gamerLeaderboard()->setLastRank(jobj.value(QString("last_rank")).toInt());
+        m_gamer.gamerLeaderboard()->setLastRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("last_rank_at")).toDouble())));
+        m_gamer.gamerLeaderboard()->setBestRank(jobj.value(QString("best_rank")).toInt());
+        m_gamer.gamerLeaderboard()->setBestRankAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(jobj.value(QString("best_rank_at")).toDouble())));
+    }
+}
+
+void GameUpQtPrivate::setLeaderboardScore(const QString &username, int score) {
     QJsonObject jobj;
     jobj.insert("score", score);
     QJsonDocument jsdoc = QJsonDocument(jobj);
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + lbid, QList<RequestParameter>(), jsdoc.toJson());
+    gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), jsdoc.toJson());
     loop.exec();
 }
 
@@ -185,4 +219,3 @@ void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, QBy
     qDebug() << "data" << data << id;
     qDebug() << "Error:" << error;
 }
-

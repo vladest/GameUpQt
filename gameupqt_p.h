@@ -7,14 +7,15 @@
 #include <QEventLoop>
 #include "gamer.h"
 #include "leaderboard.h"
+#include "gameupqt.h"
 
-class GameUpQt;
 class GameOnRequest;
 class Gamer;
 class Leaderboard;
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
     class QQuickWebEngineView;
+    class QQuickWebEngineLoadRequest;
 #else
     class QQuickWebView;
 #endif
@@ -44,8 +45,8 @@ public:
     void setLeaderboardScore(const QString &username, int score);
     void updateGamerAchievments(const QString &username);
     bool ping();
-    QString loginAnonymous(const QString &username);
-    QString loginGameup(const QString &username);
+    QString login(GameUpQt::LoginType loginType, const QString &username);
+
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
     QQuickWebEngineView* webView() const;
     void setWebView(QQuickWebEngineView* webView);
@@ -64,6 +65,12 @@ public:
 
 private slots:
     void reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data);
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+    void webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest);
+#else
+    void webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest);
+#endif
+
 
 
 private:
@@ -73,6 +80,7 @@ private:
     QEventLoop loop;
     QNetworkReply::NetworkError lasterror;
     QByteArray lastData;
+    QString m_lastToken;
     QMap<QString, QString> m_usersTokens;
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND

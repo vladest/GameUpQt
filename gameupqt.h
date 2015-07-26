@@ -27,6 +27,17 @@ class GameUpQt: public QQuickItem {
 #endif
 
 public:
+    enum LoginType {
+        Anonymous,
+        GameUp,
+        Twitter,
+        Facebook,
+        Google,
+        OAuth2
+    };
+
+    Q_ENUM(LoginType)
+
     GameUpQt(QQuickItem *parent = 0);
     QString apiKey() const;
     QString leaderboardID() const;
@@ -40,7 +51,7 @@ public:
 #endif
 public slots:
     bool ping();
-    QString loginAnonymous(const QString &username);
+    QString login(LoginType loginType, const QString &username = "");
     Gamer *getGamer(const QString &username);
     void addUserToken(const QString &username, const QString &token);
     Leaderboard *getLeaderboard(const QString &username);

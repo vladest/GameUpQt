@@ -8,11 +8,11 @@ Since the code is written at spare time, not all features from GameUp implemente
 TODO:
 - [x] Write en example
 - [ ] Implement async mode
-- [ ] Implement OAuth2 based authentifications (Google/Twitter/FB)
-- [ ] Implement GameUp authentification
+- [x] Implement Google/Twitter/FB based authentifications
+- [x] Implement GameUp authentification
 - [ ] Implement missed GameUp functionality
 
 Howto build:
  * Install latest Qt SDK for your platform from here: http://www.qt.io/download/
- * run "<path to qmake>/qmake"
+ * run "qmake" from binary folder of Qt SDK for given platform
  * run "make; make install"

@@ -1,7 +1,5 @@
 #include "gameupqt.h"
 #include "gameupqt_p.h"
-
-#include "QtWebView/QQuickWebView"
 #include <QDebug>
 
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
@@ -19,9 +17,9 @@ bool GameUpQt::ping() {
     return d->ping();
 }
 
-QString GameUpQt::loginAnonymous(const QString &username) {
+QString GameUpQt::login(LoginType loginType, const QString &username) {
     Q_D(GameUpQt);
-    return d->loginAnonymous(username);
+    return d->login(loginType, username);
 }
 
 Gamer *GameUpQt::getGamer(const QString &username) {

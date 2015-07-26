@@ -1,6 +1,7 @@
 import QtQuick 2.5
 import QtQuick.Window 2.2
 import GameUpQt 1.0
+import QtWebView 1.1
 
 Window {
     visible: true
@@ -13,7 +14,9 @@ Window {
 
     onGameServerAliveChanged: {
         if (gameServerAlive) {
-            userToken = gameup.loginAnonymous(user)
+            webViewID.visible = true
+            userToken = gameup.login(GameUpQt.GameUp, user)
+            webViewID.visible = false
             if (userToken !== "") {
                 gameup.addUserToken(user, userToken) //fillup table to associate user with its GameUp token
                 gameup.updateGamerAchievments(user)
@@ -36,13 +39,23 @@ Window {
         text: qsTr("Hello World")
         anchors.centerIn: parent
     }
+
     GameUpQt {
         id: gameup
-        apiKey: "<api key here>"
-        leaderboardID: "<leaderboard id here>"
+        apiKey: "18d8572ef7a947058c8bc03f5c7c9376" // replace with your apiKey here
+        leaderboardID: "e05fbaee728644ce89e943ad5c5db6f2" //replace with your leaderboard id here
+        webView: webViewID
         Component.onCompleted: {
-            gameServerAlive = ping() //ping server make sure it works
+            gameServerAlive = ping()
         }
     }
+
+    WebView {
+        id: webViewID
+        anchors.fill: parent
+        visible: false
+        z: 100
+    }
+
 }
 

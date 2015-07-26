@@ -2,6 +2,14 @@
 #include "gameonrequest.h"
 #include "gamer.h"
 #include "leaderboard.h"
+#include <QUrlQuery>
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+#include <QtWebEngine/qtwebengineglobal.h>
+#include <QtWebEngine/private/qquickwebengineview_p.h>
+#include <QtWebEngine/private/qquickwebengineloadrequest_p.h>
+#else
+#include "QtWebView/QQuickWebView"
+#endif // QT_WEBVIEW_WEBENGINE_BACKEND
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,6 +21,7 @@ static const char gameOnAccountAPIUrl[] = "https://accounts.gameup.io/v0/";
 GameUpQtPrivate::GameUpQtPrivate(QObject *parent): QObject(parent)
   , gonRequest(Q_NULLPTR)
   , lasterror(QNetworkReply::NoError)
+  , m_webView(Q_NULLPTR)
   , m_asyncMode(false) {
 
 }
@@ -39,35 +48,77 @@ bool GameUpQtPrivate::ping() {
     return (lasterror == QNetworkReply::NoError);
 }
 
-QString GameUpQtPrivate::loginAnonymous(const QString &username) {
-    QString token;
-    QString userhash = QString(QCryptographicHash::hash((username.toLocal8Bit()),QCryptographicHash::Md5).toHex());
-    if (userhash.length() < 32 || userhash.length() > 128) {
-        qWarning() << "Invalid username hash length" << userhash.length();
-        return token;
-    }
-
-    QJsonObject jobj;
-    jobj.insert("id", userhash);
-    QJsonDocument jsdoc = QJsonDocument(jobj);
-    gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", QList<RequestParameter>(), jsdoc.toJson());
-    loop.exec();
-    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
-        jsdoc = QJsonDocument::fromJson(lastData);
-        QJsonObject sett2 = jsdoc.object();
-        QJsonValue value = sett2.value(QString("token"));
-        token = value.toString();
-        gonRequest->setToken(token);
-        addUserToken(username, token);
-    }
-    return token;
-}
-
-QString GameUpQtPrivate::loginGameup(const QString &username) {
+QString GameUpQtPrivate::login(GameUpQt::LoginType loginType, const QString &username) {
+    m_lastToken.clear();
     gonRequest->setToken(m_usersTokens[username]);
-    //TODO: need to implement multiplatform QtWebEngine (only desktop for now) or QtWebView (only iOS/Android/OSX atm) or redirect_uri on server side
-    return QString("");
+    if (loginType == GameUpQt::Anonymous) {
+        QString userhash = QString(QCryptographicHash::hash((username.toLocal8Bit()),QCryptographicHash::Md5).toHex());
+        if (userhash.length() < 32 || userhash.length() > 128) {
+            qWarning() << "Invalid username hash length" << userhash.length();
+            return m_lastToken;
+        }
+
+        QJsonObject jobj;
+        jobj.insert("id", userhash);
+        QJsonDocument jsdoc = QJsonDocument(jobj);
+        gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", QList<RequestParameter>(), jsdoc.toJson());
+        loop.exec();
+        if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+            jsdoc = QJsonDocument::fromJson(lastData);
+            QJsonObject sett2 = jsdoc.object();
+            QJsonValue value = sett2.value(QString("token"));
+            m_lastToken = value.toString();
+            gonRequest->setToken(m_lastToken);
+            addUserToken(username, m_lastToken);
+        }
+    } else if (loginType >= GameUpQt::GameUp && loginType <= GameUpQt::Google ) {
+        if (m_webView) {
+            QString loginString = "gameup";
+            if (loginType == GameUpQt::Twitter)
+                loginString = "twitter";
+            else if (loginType == GameUpQt::Facebook)
+                loginString = "facebook";
+            else if (loginType == GameUpQt::Google)
+                loginString = "google";
+            QUrl url(QString(gameOnAccountAPIUrl) + "gamer/login/" + loginString);
+            QUrlQuery query(url);
+            query.addQueryItem(QByteArray("apiKey"), m_apiKey.toLatin1());
+            url.setQuery(query);
+            m_lastToken.clear();
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+            connect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
+#else
+#endif
+            m_webView->setUrl(url);
+            loop.exec();
+        } else {
+            qWarning() << "WebView does not setup! Check webView property";
+        }
+
+    }
+    return m_lastToken;
 }
+
+
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
+
+    qDebug() << "loadrequest" << loadRequest->url();
+    QUrlQuery query = QUrlQuery(loadRequest->url());
+    if (query.hasQueryItem("token")) {
+        m_lastToken = query.queryItemValue("token");
+    }
+    if (!m_lastToken.isEmpty() || loadRequest->errorCode() != 0 || loadRequest->status() == QQuickWebEngineView::LoadFailedStatus) {
+        disconnect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
+        if (loop.isRunning())
+            loop.quit();
+    }
+}
+
+#else
+void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
+}
+#endif
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
 QQuickWebEngineView *GameUpQtPrivate::webView() const {
@@ -227,3 +278,4 @@ void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, QBy
     qDebug() << "data" << data << id;
     qDebug() << "Error:" << error;
 }
+

@@ -16,7 +16,6 @@ void GameOnRequest::get(const QString &partUrl, const QList<RequestParameter> &r
     if (!setup(partUrl, reqParameters))
         return;
     reply_ = m_accessManager->get(request_);
-    timedReplies_.add(reply_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
     connect(reply_, SIGNAL(finished()), this, SLOT(onRequestFinished()), Qt::QueuedConnection);
 }
@@ -25,7 +24,6 @@ void GameOnRequest::post(const QString &partUrl, const QList<RequestParameter> &
     if (!setup(partUrl, reqParameters))
         return;
     reply_ = m_accessManager->post(request_, data);
-    timedReplies_.add(reply_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
     connect(reply_, SIGNAL(finished()), this, SLOT(onRequestFinished()), Qt::QueuedConnection);
     connect(reply_, SIGNAL(uploadProgress(qint64,qint64)), this, SLOT(onUploadProgress(qint64,qint64)));
@@ -36,7 +34,6 @@ void GameOnRequest::put(const QString &partUrl, const QList<RequestParameter> &r
     if (!setup(partUrl, reqParameters))
         return;
     reply_ = m_accessManager->put(request_, data);
-    timedReplies_.add(reply_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
     connect(reply_, SIGNAL(finished()), this, SLOT(onRequestFinished()), Qt::QueuedConnection);
     connect(reply_, SIGNAL(uploadProgress(qint64,qint64)), this, SLOT(onUploadProgress(qint64,qint64)));
@@ -156,7 +153,6 @@ void GameOnRequest::finish() {
     }
     data = reply_->readAll();
     status_ = Idle;
-    timedReplies_.remove(reply_);
     reply_->disconnect(this);
     reply_->deleteLater();
     emit finished(id_, error_, data);
@@ -167,7 +163,6 @@ void GameOnRequest::retry() {
         qWarning() << "GameOnRequest::retry: No pending request";
         return;
     }
-    timedReplies_.remove(reply_);
     reply_->disconnect(this);
     reply_->deleteLater();
     QUrl url = url_;
@@ -189,7 +184,6 @@ void GameOnRequest::retry() {
     default:
         reply_ = m_accessManager->put(request_, data_);
     }
-    timedReplies_.add(reply_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
     connect(reply_, SIGNAL(finished()), this, SLOT(onRequestFinished()), Qt::QueuedConnection);
     connect(reply_, SIGNAL(uploadProgress(qint64,qint64)), this, SLOT(onUploadProgress(qint64,qint64)));

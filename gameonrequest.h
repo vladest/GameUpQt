@@ -6,8 +6,6 @@
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>
 
-#include "gureply.h"
-
 struct RequestParameter {
     RequestParameter(const QByteArray &n, const QByteArray &v): name(n), value(v) {
     }
@@ -74,7 +72,6 @@ private:
     QString m_apiKey;
     QString m_token;
     int id_;
-    GUReplyList timedReplies_;
     QNetworkReply *reply_;
     QByteArray data_;
     QUrl url_;

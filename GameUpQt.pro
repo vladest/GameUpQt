@@ -22,8 +22,6 @@ QT += webview-private
 
 SOURCES += gameupqt.cpp \
     gameonrequest.cpp \
-    replyserver.cpp \
-    gureply.cpp \
     gamer.cpp \
     leaderboard.cpp \
     gamerachievments.cpp \
@@ -33,8 +31,6 @@ SOURCES += gameupqt.cpp \
 
 HEADERS += gameupqt.h \
     gameonrequest.h \
-    replyserver.h \
-    gureply.h \
     gamer.h \
     leaderboard.h \
     gamerachievments.h \

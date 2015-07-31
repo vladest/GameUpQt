@@ -3,9 +3,9 @@
 
 #include <QtQuick/QQuickItem>
 
-class GameUpQtPrivate;
 class Gamer;
 class Leaderboard;
+class GameUpQtPrivate;
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
     class QQuickWebEngineView;
@@ -35,8 +35,18 @@ public:
         Google,
         OAuth2
     };
-
     Q_ENUM(LoginType)
+
+    enum ServerOps {
+        Ping,
+        Login,
+        LeaderboardUpdate,
+        GamerDataUpdate,
+        GamerRankUpdate,
+        GamerAchievmentsUpdate,
+        SetLeaderboardScore
+    };
+    Q_ENUM(ServerOps)
 
     GameUpQt(QQuickItem *parent = 0);
     QString apiKey() const;
@@ -57,6 +67,8 @@ public slots:
     Leaderboard *getLeaderboard(const QString &username);
     void updateGamerLeaderboard(const QString &username);
     void updateGamerAchievments(const QString &username);
+    void updateGamerRank(const QString &username);
+    void updateGamerData(const QString &username);
     void setLeaderboardScore(const QString &username, int score);
     void setAsyncMode(bool asyncMode);
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
@@ -64,15 +76,27 @@ public slots:
 #else
     void setWebView(QQuickWebView* webView);
 #endif
+private slots:
+    void reqComplete(ServerOps op);
 signals:
     void apiKeyChanged(QString apiKey);
     void leaderboardIDChanged(QString leaderboardID);
     void asyncModeChanged(bool asyncMode);
     void webViewChanged();
 
+    void pingResultChanged(bool ok);
+    void loginCompleted(const QString &token);
+    void gamerLeaderboardUpdated();
+    void gamerDataUpdated();
+    void gamerRankUpdated();
+    void gamerAchievmentsUpdated();
+    void leaderboardScoreSetFinished();
+
 private:
     Q_DECLARE_PRIVATE(GameUpQt)
     GameUpQtPrivate *d_ptr;
 };
+
+//Q_DECLARE_METATYPE(GameUpQt::ServerOps)
 
 #endif // GAMEUPQT_H

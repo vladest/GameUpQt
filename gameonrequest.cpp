@@ -12,16 +12,16 @@ GameOnRequest::GameOnRequest(const QString &apiKey, QNetworkAccessManager *manag
     qRegisterMetaType<QNetworkReply::NetworkError>("QNetworkReply::NetworkError");
 }
 
-void GameOnRequest::get(const QString &partUrl, const QList<RequestParameter> &reqParameters) {
-    if (!setup(partUrl, reqParameters))
+void GameOnRequest::get(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QVariant &reqId) {
+    if (!setup(partUrl, reqParameters, reqId))
         return;
     reply_ = m_accessManager->get(request_);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
     connect(reply_, SIGNAL(finished()), this, SLOT(onRequestFinished()), Qt::QueuedConnection);
 }
 
-void GameOnRequest::post(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data) {
-    if (!setup(partUrl, reqParameters))
+void GameOnRequest::post(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data, const QVariant &reqId) {
+    if (!setup(partUrl, reqParameters, reqId))
         return;
     reply_ = m_accessManager->post(request_, data);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
@@ -30,8 +30,8 @@ void GameOnRequest::post(const QString &partUrl, const QList<RequestParameter> &
 }
 
 
-void GameOnRequest::put(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data) {
-    if (!setup(partUrl, reqParameters))
+void GameOnRequest::put(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data, const QVariant &reqId) {
+    if (!setup(partUrl, reqParameters, reqId))
         return;
     reply_ = m_accessManager->put(request_, data);
     connect(reply_, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onRequestError(QNetworkReply::NetworkError)), Qt::QueuedConnection);
@@ -39,7 +39,7 @@ void GameOnRequest::put(const QString &partUrl, const QList<RequestParameter> &r
     connect(reply_, SIGNAL(uploadProgress(qint64,qint64)), this, SLOT(onUploadProgress(qint64,qint64)));
 }
 
-bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> &parameters) {
+bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> &parameters, const QVariant &reqId) {
     if (status_ != Idle) {
         qWarning() << "GameOnRequest::setup: Another request pending";
         return false;
@@ -59,7 +59,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
         query.addQueryItem(p.name, p.value);
     }
     url.setQuery(query);
-    qDebug() << "url" << url;
+    //qDebug() << "url" << url;
     status_ = Requesting;
     request_.setUrl(url);
 
@@ -69,6 +69,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
     QString auth = QString("%1:%2").arg(m_apiKey).arg(m_token);
     //qDebug() << "auth:" << auth << auth.toLatin1().toBase64();
     request_.setRawHeader(QByteArray("Authorization"), QByteArray("Basic ") + auth.toLatin1().toBase64());
+    request_.setAttribute(QNetworkRequest::User, reqId);
 
     return true;
 }
@@ -155,7 +156,7 @@ void GameOnRequest::finish() {
     status_ = Idle;
     reply_->disconnect(this);
     reply_->deleteLater();
-    emit finished(id_, error_, data);
+    emit finished(id_, error_, data, reply_->attribute(QNetworkRequest::User));
 }
 
 void GameOnRequest::retry() {

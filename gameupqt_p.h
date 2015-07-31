@@ -22,6 +22,7 @@ class Leaderboard;
 
 class GameUpQtPrivate: public QObject
 {
+    Q_OBJECT
 public:
     GameUpQtPrivate(QObject *parent = 0);
     QString apiKey() const;
@@ -63,15 +64,27 @@ public:
     bool getAsyncMode() const;
     void setAsyncMode(bool asyncMode);
 
+    QNetworkReply::NetworkError getLasterror() const;
+
+    QString getLastToken() const;
+
 private slots:
-    void reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data);
+    void reqfinished(int id, QNetworkReply::NetworkError error, const QByteArray &data, const QVariant &reqId);
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
     void webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest);
 #else
     void webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest);
 #endif
 
+signals:
+    void reqComplete(GameUpQt::ServerOps op);
 
+private:
+    void doUpdateGamerData();
+    void doUpdateGamerAchievments();
+    void doUpdateLeaderboard();
+    void doUpdateGamerRank();
+    void doParseGamerToken();
 
 private:
     QString m_apiKey;
@@ -93,6 +106,7 @@ private:
     Gamer m_gamer;
     Leaderboard m_leaderboard;
     bool m_asyncMode;
+    QString m_lastUsername;
 };
 
 #endif // GAMEUPCOMMON_H

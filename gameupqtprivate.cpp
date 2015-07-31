@@ -40,85 +40,6 @@ void GameUpQtPrivate::setApiKey(const QString &apiKey) {
     connect(gonRequest, &GameOnRequest::finished, this, &GameUpQtPrivate::reqfinished);
 }
 
-bool GameUpQtPrivate::ping() {
-    if (Q_NULLPTR == gonRequest)
-        return false;
-    gonRequest->get(QString(gameOnAPIUrl), QList<RequestParameter>());
-    loop.exec();
-    return (lasterror == QNetworkReply::NoError);
-}
-
-QString GameUpQtPrivate::login(GameUpQt::LoginType loginType, const QString &username) {
-    m_lastToken.clear();
-    gonRequest->setToken(m_usersTokens[username]);
-    if (loginType == GameUpQt::Anonymous) {
-        QString userhash = QString(QCryptographicHash::hash((username.toLocal8Bit()),QCryptographicHash::Md5).toHex());
-        if (userhash.length() < 32 || userhash.length() > 128) {
-            qWarning() << "Invalid username hash length" << userhash.length();
-            return m_lastToken;
-        }
-
-        QJsonObject jobj;
-        jobj.insert("id", userhash);
-        QJsonDocument jsdoc = QJsonDocument(jobj);
-        gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", QList<RequestParameter>(), jsdoc.toJson());
-        loop.exec();
-        if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
-            jsdoc = QJsonDocument::fromJson(lastData);
-            QJsonObject sett2 = jsdoc.object();
-            QJsonValue value = sett2.value(QString("token"));
-            m_lastToken = value.toString();
-            gonRequest->setToken(m_lastToken);
-            addUserToken(username, m_lastToken);
-        }
-    } else if (loginType >= GameUpQt::GameUp && loginType <= GameUpQt::Google ) {
-        if (m_webView) {
-            QString loginString = "gameup";
-            if (loginType == GameUpQt::Twitter)
-                loginString = "twitter";
-            else if (loginType == GameUpQt::Facebook)
-                loginString = "facebook";
-            else if (loginType == GameUpQt::Google)
-                loginString = "google";
-            QUrl url(QString(gameOnAccountAPIUrl) + "gamer/login/" + loginString);
-            QUrlQuery query(url);
-            query.addQueryItem(QByteArray("apiKey"), m_apiKey.toLatin1());
-            url.setQuery(query);
-            m_lastToken.clear();
-#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
-            connect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
-#else
-#endif
-            m_webView->setUrl(url);
-            loop.exec();
-        } else {
-            qWarning() << "WebView does not setup! Check webView property";
-        }
-
-    }
-    return m_lastToken;
-}
-
-
-#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
-void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
-
-    qDebug() << "loadrequest" << loadRequest->url();
-    QUrlQuery query = QUrlQuery(loadRequest->url());
-    if (query.hasQueryItem("token")) {
-        m_lastToken = query.queryItemValue("token");
-    }
-    if (!m_lastToken.isEmpty() || loadRequest->errorCode() != 0 || loadRequest->status() == QQuickWebEngineView::LoadFailedStatus) {
-        disconnect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
-        if (loop.isRunning())
-            loop.quit();
-    }
-}
-
-#else
-void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
-}
-#endif
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
 QQuickWebEngineView *GameUpQtPrivate::webView() const {
@@ -160,10 +81,116 @@ void GameUpQtPrivate::setAsyncMode(bool asyncMode) {
     m_asyncMode = asyncMode;
 }
 
+
+QNetworkReply::NetworkError GameUpQtPrivate::getLasterror() const {
+    return lasterror;
+}
+
+QString GameUpQtPrivate::getLastToken() const {
+    return m_lastToken;
+}
+
+
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
+
+    qDebug() << "loadrequest" << loadRequest->url();
+    QUrlQuery query = QUrlQuery(loadRequest->url());
+    if (query.hasQueryItem("token")) {
+        m_lastToken = query.queryItemValue("token");
+    }
+    if (!m_lastToken.isEmpty() || loadRequest->errorCode() != 0 || loadRequest->status() == QQuickWebEngineView::LoadFailedStatus) {
+        disconnect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
+        if (!m_asyncMode && loop.isRunning())
+            loop.quit();
+        emit reqComplete(GameUpQt::Login);
+    }
+}
+
+#else
+void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
+}
+#endif
+
+bool GameUpQtPrivate::ping() {
+    if (Q_NULLPTR == gonRequest)
+        return false;
+    gonRequest->get(QString(gameOnAPIUrl), QList<RequestParameter>(), GameUpQt::Ping);
+    if (!m_asyncMode) {
+        loop.exec();
+        return (lasterror == QNetworkReply::NoError);
+    }
+    return false;
+}
+
+void GameUpQtPrivate::doParseGamerToken() {
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject sett2 = jsdoc.object();
+        QJsonValue value = sett2.value(QString("token"));
+        m_lastToken = value.toString();
+        gonRequest->setToken(m_lastToken);
+        addUserToken(m_lastUsername, m_lastToken);
+    }
+}
+
+QString GameUpQtPrivate::login(GameUpQt::LoginType loginType, const QString &username) {
+    m_lastToken.clear();
+    m_lastUsername = username;
+    gonRequest->setToken(m_usersTokens[username]);
+    if (loginType == GameUpQt::Anonymous) {
+        QString userhash = QString(QCryptographicHash::hash((username.toLocal8Bit()),QCryptographicHash::Md5).toHex());
+        if (userhash.length() < 32 || userhash.length() > 128) {
+            qWarning() << "Invalid username hash length" << userhash.length();
+            return m_lastToken;
+        }
+
+        QJsonObject jobj;
+        jobj.insert("id", userhash);
+        QJsonDocument jsdoc = QJsonDocument(jobj);
+        gonRequest->post(QString(gameOnAccountAPIUrl) + "gamer/login/anonymous", QList<RequestParameter>(), jsdoc.toJson(), GameUpQt::Login);
+    } else if (loginType >= GameUpQt::GameUp && loginType <= GameUpQt::Google ) {
+        if (m_webView) {
+            QString loginString = "gameup";
+            if (loginType == GameUpQt::Twitter)
+                loginString = "twitter";
+            else if (loginType == GameUpQt::Facebook)
+                loginString = "facebook";
+            else if (loginType == GameUpQt::Google)
+                loginString = "google";
+            QUrl url(QString(gameOnAccountAPIUrl) + "gamer/login/" + loginString);
+            QUrlQuery query(url);
+            query.addQueryItem(QByteArray("apiKey"), m_apiKey.toLatin1());
+            url.setQuery(query);
+            m_lastToken.clear();
+#ifdef QT_WEBVIEW_WEBENGINE_BACKEND
+            connect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
+#else
+#endif
+            m_webView->setUrl(url);
+        } else {
+            qWarning() << "WebView does not setup! Check webView property";
+        }
+    }
+    if (!m_asyncMode) {
+        loop.exec();
+        if (loginType == GameUpQt::Anonymous) {
+            doParseGamerToken();
+        }
+    }
+    return m_lastToken;
+}
+
 void GameUpQtPrivate::updateGamerData(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "gamer", QList<RequestParameter>());
-    loop.exec();
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer", QList<RequestParameter>(), GameUpQt::GamerDataUpdate);
+    if (!m_asyncMode) {
+        loop.exec();
+        doUpdateGamerData();
+    }
+}
+
+void GameUpQtPrivate::doUpdateGamerData() {
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject jobj = jsdoc.object();
@@ -182,8 +209,14 @@ void GameUpQtPrivate::addUserToken(const QString &username, const QString &token
 
 void GameUpQtPrivate::updateGamerAchievments(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "gamer/achievement", QList<RequestParameter>());
-    loop.exec();
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/achievement", QList<RequestParameter>(), GameUpQt::GamerAchievmentsUpdate);
+    if (!m_asyncMode) {
+        loop.exec();
+        doUpdateGamerAchievments();
+    }
+}
+
+void GameUpQtPrivate::doUpdateGamerAchievments() {
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject jobj = jsdoc.object();
@@ -219,8 +252,14 @@ void GameUpQtPrivate::updateGamerAchievments(const QString &username) {
 
 void GameUpQtPrivate::updateLeaderboard(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>());
-    loop.exec();
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), GameUpQt::LeaderboardUpdate);
+    if (!m_asyncMode) {
+        loop.exec();
+        doUpdateLeaderboard();
+    }
+}
+
+void GameUpQtPrivate::doUpdateLeaderboard() {
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
@@ -243,8 +282,14 @@ void GameUpQtPrivate::updateLeaderboard(const QString &username) {
 
 void GameUpQtPrivate::updateGamerRank(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>());
-    loop.exec();
+    gonRequest->get(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), GameUpQt::GamerRankUpdate);
+    if (!m_asyncMode) {
+        loop.exec();
+        doUpdateGamerRank();
+    }
+}
+
+void GameUpQtPrivate::doUpdateGamerRank() {
     if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
         QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
         QJsonObject jobj = jsdoc.object().value("rank").toObject();
@@ -266,15 +311,32 @@ void GameUpQtPrivate::setLeaderboardScore(const QString &username, int score) {
     jobj.insert("score", score);
     QJsonDocument jsdoc = QJsonDocument(jobj);
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), jsdoc.toJson());
-    loop.exec();
+    gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), jsdoc.toJson(), GameUpQt::SetLeaderboardScore);
+    if (!m_asyncMode) {
+        loop.exec();
+    }
 }
 
-void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, QByteArray data) {
+void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, const QByteArray &data, const QVariant &reqId) {
     lasterror = error;
     lastData = data;
-    if (loop.isRunning())
+    if (m_asyncMode) {
+        GameUpQt::ServerOps op = static_cast<GameUpQt::ServerOps>(reqId.toInt());
+        if (op == GameUpQt::Login) {
+            doParseGamerToken();
+        } else if (op == GameUpQt::LeaderboardUpdate) {
+            doUpdateLeaderboard();
+        } else if (op == GameUpQt::GamerDataUpdate) {
+            doUpdateGamerData();
+        } else if (op == GameUpQt::GamerRankUpdate) {
+            doUpdateGamerRank();
+        } else if (op == GameUpQt::GamerAchievmentsUpdate) {
+            doUpdateGamerAchievments();
+        }
+        emit reqComplete(op);
+    } else if (loop.isRunning()) {
         loop.quit();
+    }
     qDebug() << "data" << data << id;
     qDebug() << "Error:" << error;
 }

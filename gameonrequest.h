@@ -16,15 +16,15 @@ struct RequestParameter {
     QByteArray value;
 };
 
-class GameOnRequest : public QObject
-{
+class GameOnRequest : public QObject {
     Q_OBJECT
+
 public:
     explicit GameOnRequest(const QString &apiKey, QNetworkAccessManager *manager, QObject *parent = 0);
 
-    void get(const QString &partUrl, const QList<RequestParameter> &reqParameters);
-    void post(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data);
-    void put(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data);
+    void get(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QVariant &reqId);
+    void post(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data, const QVariant &reqId);
+    void put(const QString &partUrl, const QList<RequestParameter> &reqParameters, const QByteArray &data, const QVariant &reqId);
 
     QNetworkReply *getReply() const;
 
@@ -33,7 +33,7 @@ public:
 
 signals:
     /// Emitted when a request has been completed or failed.
-    void finished(int id, QNetworkReply::NetworkError error, QByteArray data);
+    void finished(int id, QNetworkReply::NetworkError error, const QByteArray &data, const QVariant &reqId);
 
     /// Emitted when an upload has progressed.
     void uploadProgress(int id, qint64 bytesSent, qint64 bytesTotal);
@@ -58,7 +58,7 @@ protected slots:
     void onUploadProgress(qint64 uploaded, qint64 total);
 
 private:
-    bool setup(const QString &partUrl, const QList<RequestParameter> &parameters);
+    bool setup(const QString &partUrl, const QList<RequestParameter> &parameters, const QVariant &reqId);
 
     enum Status {
         Idle, Requesting, ReRequesting

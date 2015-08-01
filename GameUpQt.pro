@@ -12,6 +12,8 @@ CONFIG += plugin
 TARGETPATH = GameUpQt
 API_VER=1.0
 
+QMAKE_DOCS = $$PWD/doc/gameupqt.qdocconf
+
 #Qt 5.5 and higher
 QT += webview-private
 

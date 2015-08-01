@@ -2,6 +2,20 @@
 #include "gameupqt_p.h"
 #include <QDebug>
 
+/*!
+   \class GameUpQt
+   \inmodule GameUpQt
+
+   \brief The GameUpQt is QML item class
+
+   The GameUpQt class inherits QQuickItem. The class give access to
+   GameUp API, which is used for maintain gamer's achievments and
+   provide Leaderboard ranking for gamers
+   Each game should be registered at GameUp site and the API key
+   should be generated. The API key have to be loaded to \property GameUpQt::apiKey
+
+*/
+
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
   , d_ptr(new GameUpQtPrivate) {
     qRegisterMetaType<GameUpQt::ServerOps>("GameUpQt::ServerOps");

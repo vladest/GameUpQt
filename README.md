@@ -7,7 +7,7 @@ Since the code is written at spare time, not all features from GameUp implemente
 
 TODO:
 - [x] Write en example
-- [ ] Implement async mode
+- [x] Implement async mode
 - [x] Implement Google/Twitter/FB based authentifications
 - [x] Implement GameUp authentification
 - [ ] Implement missed GameUp functionality

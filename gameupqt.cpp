@@ -11,9 +11,25 @@
    The GameUpQt class inherits QQuickItem. The class give access to
    GameUp API, which is used for maintain gamer's achievments and
    provide Leaderboard ranking for gamers
-   Each game should be registered at GameUp site and the API key
-   should be generated. The API key have to be loaded to \property GameUpQt::apiKey
+   Each game should be registered at \l {https://dashboard.gameup.io/} {GameUp dashboard} and the API key
+   should be generated. The API key have to be loaded to \l {GameUpQt::} {apiKey}
 
+   GameUp API can work in two modes: sync and async
+   \l {GameUpQt::} {asyncMode} responsible for mode
+
+*/
+
+/*!
+  \property GameUpQt::apiKey
+  \brief set GameUp API key generated at \l {https://dashboard.gameup.io/} {GameUp dashboard}
+*/
+
+/*!
+    \property GameUpQt::asyncMode
+    \brief set GameUp QML Item mode
+
+    if \l {asyncMode} set as \c true then methods will exit immedialely and all responses will be
+    provided via signals
 */
 
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)

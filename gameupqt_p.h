@@ -42,8 +42,10 @@ public:
      */
     void addUserToken(const QString &username, const QString &token);
     void updateLeaderboard(const QString &username);
+    //get list of leaderboards
+    void getLeaderboards(const QString &username);
     void updateGamerRank(const QString &username);
-    void setLeaderboardScore(const QString &username, int score);
+    void setLeaderboardScore(const QString &username, int score, const QString &metadata = "");
     void updateGamerAchievments(const QString &username);
     bool ping();
     QString login(GameUpQt::LoginType loginType, const QString &username);
@@ -59,7 +61,7 @@ public:
     void setLeaderboardID(const QString &leaderboardID);
 
     Gamer *getGamer();
-    Leaderboard *getLeaderboard();
+    Leaderboard *getLeaderboard(const QString &id);
 
     bool getAsyncMode() const;
     void setAsyncMode(bool asyncMode);
@@ -86,6 +88,10 @@ private:
     void doUpdateGamerRank();
     void doParseGamerToken();
 
+    //parse list of leaderboards
+    void doUpdateLeaderboards();
+    //parse single leaderboard entry
+    void parseLeaderboard(const QJsonObject &jobj);
 private:
     QString m_apiKey;
     QNetworkAccessManager m_manager;
@@ -104,9 +110,10 @@ private:
     QString m_achievmentsID;
     QString m_leaderboardID;
     Gamer m_gamer;
-    Leaderboard m_leaderboard;
+    QMap <QString, Leaderboard*> m_leaderboards;
     bool m_asyncMode;
     QString m_lastUsername;
+
 };
 
 #endif // GAMEUPCOMMON_H

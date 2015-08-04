@@ -69,8 +69,8 @@ void GameUpQtPrivate::setLeaderboardID(const QString &leaderboardID) {
     m_leaderboardID = leaderboardID;
 }
 
-Leaderboard *GameUpQtPrivate::getLeaderboard() {
-    return &m_leaderboard;
+Leaderboard *GameUpQtPrivate::getLeaderboard(const QString &id) {
+    return m_leaderboards[id];
 }
 
 bool GameUpQtPrivate::getAsyncMode() const {
@@ -259,23 +259,68 @@ void GameUpQtPrivate::updateLeaderboard(const QString &username) {
     }
 }
 
-void GameUpQtPrivate::doUpdateLeaderboard() {
-    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
-        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
-        QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
-        m_leaderboard.setName(jobj.value(QString("name")).toString());
-        m_leaderboard.setPublic_id(jobj.value(QString("public_id")).toString());
-        m_leaderboard.setSort(jobj.value(QString("sort")).toString());
-        m_leaderboard.setType(jobj.value(QString("type")).toString());
-        QJsonArray jarr = jobj.value(QString("entries")).toArray();
-        m_leaderboard.clearEntries();
+void GameUpQtPrivate::getLeaderboards(const QString &username) {
+    gonRequest->setToken(m_usersTokens[username]);
+    gonRequest->get(QString(gameOnAPIUrl) + "game/leaderboard", QList<RequestParameter>(), GameUpQt::LeaderboardUpdate);
+    if (!m_asyncMode) {
+        loop.exec();
+        doUpdateLeaderboard();
+    }
+}
+
+void GameUpQtPrivate::parseLeaderboard(const QJsonObject &jobj) {
+    QString l_id = jobj.value(QString("leaderboard_id")).toString();
+    if (l_id.isEmpty())
+        return;
+    Leaderboard *l_ = m_leaderboards[l_id];
+    if (l_ == Q_NULLPTR)
+        l_ = new Leaderboard;
+    m_leaderboards[l_id] = l_;
+    l_->setId(l_id);
+    l_->setName(jobj.value(QString("name")).toString());
+    l_->setPublic_id(jobj.value(QString("public_id")).toString());
+    l_->setSort(jobj.value(QString("sort")).toString());
+    l_->setType(jobj.value(QString("type")).toString());
+    l_->setDisplayHint(jobj.value(QString("display_hint")).toString());
+    l_->setLimit(jobj.value(QString("limit")).toInt(0));
+    QJsonArray tagsjarr = jobj.value(QString("tags")).toArray();
+    QStringList tags;
+    foreach (QJsonValue v, tagsjarr)
+        tags.append(v.toString());
+    l_->setTags(tags);
+    QJsonArray jarr = jobj.value(QString("entries")).toArray();
+    if (jarr.count() > 0) {
+        l_->clearEntries();
         foreach (QJsonValue v, jarr) {
             QJsonObject o = v.toObject();
             LeaderboardEntry *e = new LeaderboardEntry;
             e->setName(o.value(QString("name")).toString());
             e->setScore(o.value(QString("score")).toInt());
             e->setScoreAt(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(o.value(QString("score_at")).toDouble())));
-            m_leaderboard.addEntry(e);
+            l_->addEntry(e);
+        }
+    }
+}
+
+void GameUpQtPrivate::doUpdateLeaderboards() {
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonArray jarr = jsdoc.object().value(QString("leaderboards")).toArray();
+        if (jarr.count() > 0) {
+            foreach (QJsonValue v, jarr) {
+                QJsonObject o = v.toObject();
+                parseLeaderboard(o);
+            }
+        }
+    }
+}
+
+void GameUpQtPrivate::doUpdateLeaderboard() {
+    if (lasterror == QNetworkReply::NoError && lastData.size() > 0) {
+        QJsonDocument jsdoc = QJsonDocument::fromJson(lastData);
+        QJsonObject jobj = jsdoc.object().value("leaderboard").toObject();
+        if (!jobj.isEmpty()) {
+            parseLeaderboard(jobj);
         }
     }
 }
@@ -306,9 +351,11 @@ void GameUpQtPrivate::doUpdateGamerRank() {
     }
 }
 
-void GameUpQtPrivate::setLeaderboardScore(const QString &username, int score) {
+void GameUpQtPrivate::setLeaderboardScore(const QString &username, int score, const QString &metadata) {
     QJsonObject jobj;
     jobj.insert("score", score);
+    if (!metadata.isEmpty())
+        jobj.insert("metadata", metadata);
     QJsonDocument jsdoc = QJsonDocument(jobj);
     gonRequest->setToken(m_usersTokens[username]);
     gonRequest->post(QString(gameOnAPIUrl) + "gamer/leaderboard/" + m_leaderboardID, QList<RequestParameter>(), jsdoc.toJson(), GameUpQt::SetLeaderboardScore);

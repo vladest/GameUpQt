@@ -16,6 +16,7 @@
 
    GameUp API can work in two modes: sync and async
    \l {GameUpQt::} {asyncMode} responsible for mode
+   Recommended way is to design application using async mode
 
 */
 
@@ -23,6 +24,8 @@
   \property GameUpQt::apiKey
   \inmodule GameUpQt
   \brief set GameUp API key generated at \l {https://dashboard.gameup.io/} {GameUp dashboard}
+
+  Most of the GameUp API's (except \l {ping} ) requires API key
 */
 
 /*!
@@ -32,6 +35,30 @@
 
     if \l {asyncMode} set as \c true then methods will exit immedialely and all responses will be
     provided via signals
+*/
+
+/*!
+    \property GameUpQt::webView
+    \inmodule GameUpQt
+    \brief set WebView item for login procedure
+
+    WebView is required for login procedure. If the property is set to null, only \b anonymouse login will work
+*/
+
+/*!
+    \property GameUpQt::gamer
+    \inmodule GameUpQt
+    \brief set WebView item for login procedure
+
+    WebView is required for login procedure. If the property is set to null, only \b anonymouse login will work
+*/
+
+/*!
+    \property GameUpQt::leaderboard
+    \inmodule GameUpQt
+    \brief set WebView item for login procedure
+
+    WebView is required for login procedure. If the property is set to null, only \b anonymouse login will work
 */
 
 GameUpQt::GameUpQt(QQuickItem *parent): QQuickItem(parent)
@@ -79,39 +106,106 @@ Gamer *GameUpQt::gamer() {
     return d->getGamer();
 }
 
-Leaderboard *GameUpQt::leaderboard() {
+Leaderboard *GameUpQt::leaderboard(const QString &id) {
     Q_D(GameUpQt);
-    return d->getLeaderboard();
+    return d->getLeaderboard(id);
 }
+
+/*!
+    \fn void GameUpQt::addUserToken(const QString &username, const QString &token)
+    \inmodule GameUpQt
+
+    \brief Add user token to identify user by \a username
+
+    Allows GameUpQt class be aware if there is a token, previously taken by login procedure\n
+    The idea is to reuse saved at last app start token for login or gamer intercations procedures
+
+*/
 
 void GameUpQt::addUserToken(const QString &username, const QString &token) {
     Q_D(GameUpQt);
     d->addUserToken(username, token);
 }
 
+/*!
+    \fn void GameUpQt::updateGamerLeaderboard(const QString &username)
+    \inmodule GameUpQt
+
+    \brief Request to get gamer's leaderbord records from GameUp server
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {gamerLeaderboardUpdated} when data arrived
+
+*/
+
 void GameUpQt::updateGamerLeaderboard(const QString &username) {
     Q_D(GameUpQt);
     d->updateLeaderboard(username);
 }
+
+/*!
+    \fn void GameUpQt::updateGamerAchievments(const QString &username)
+    \inmodule GameUpQt
+
+    \brief Request to get gamer's achievments records from GameUp server
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {gamerAchievmentsUpdated} when data arrived
+
+*/
 
 void GameUpQt::updateGamerAchievments(const QString &username) {
     Q_D(GameUpQt);
     d->updateGamerAchievments(username);
 }
 
+/*!
+    \fn void GameUpQt::updateGamerRank(const QString &username)
+    \inmodule GameUpQt
+
+    \brief Request to get gamer's rank records from GameUp server
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {gamerRankUpdated} when data arrived
+
+*/
+
 void GameUpQt::updateGamerRank(const QString &username) {
     Q_D(GameUpQt);
     d->updateGamerRank(username);
 }
+
+/*!
+    \fn void GameUpQt::updateGamerData(const QString &username)
+    \inmodule GameUpQt
+
+    \brief Request to get gamer's data from GameUp server
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {gamerDataUpdated} when data arrived
+
+*/
 
 void GameUpQt::updateGamerData(const QString &username) {
     Q_D(GameUpQt);
     d->updateGamerData(username);
 }
 
-void GameUpQt::setLeaderboardScore(const QString &username, int score) {
+/*!
+    \fn void GameUpQt::setLeaderboardScore(const QString &username, const QString &leaderboardId, int score, const QString &metadata)
+    \inmodule GameUpQt
+
+    \brief Request to get gamer's Leaderboard score and metadata
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {gamerRankUpdated} when data arrived
+
+*/
+
+void GameUpQt::setLeaderboardScore(const QString &username, const QString &leaderboardId, int score, const QString &metadata) {
     Q_D(GameUpQt);
-    d->setLeaderboardScore(username, score);
+    d->setLeaderboardID(leaderboardId);
+    d->setLeaderboardScore(username, score, metadata);
 }
 
 void GameUpQt::setAsyncMode(bool asyncMode) {
@@ -155,17 +249,6 @@ void GameUpQt::reqComplete(GameUpQt::ServerOps op) {
 QString GameUpQt::apiKey() const {
     Q_D(const GameUpQt);
     return d->apiKey();
-}
-
-QString GameUpQt::leaderboardID() const {
-    Q_D(const GameUpQt);
-    return d->getLeaderboardID();
-}
-
-void GameUpQt::setLeaderboardID(QString leaderboardID) {
-    Q_D(GameUpQt);
-    d->setLeaderboardID(leaderboardID);
-    emit leaderboardIDChanged(leaderboardID);
 }
 
 bool GameUpQt::asyncMode() const {

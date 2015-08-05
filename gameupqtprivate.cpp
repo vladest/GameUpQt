@@ -90,6 +90,10 @@ QString GameUpQtPrivate::getLastToken() const {
     return m_lastToken;
 }
 
+QQmlListProperty<Leaderboard> GameUpQtPrivate::leaderboards() {
+    QList<Leaderboard*> l = m_leaderboards.values();
+    return QQmlListProperty<Leaderboard>(this, l);
+}
 
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
 void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
@@ -261,10 +265,10 @@ void GameUpQtPrivate::updateLeaderboard(const QString &username) {
 
 void GameUpQtPrivate::getLeaderboards(const QString &username) {
     gonRequest->setToken(m_usersTokens[username]);
-    gonRequest->get(QString(gameOnAPIUrl) + "game/leaderboard", QList<RequestParameter>(), GameUpQt::LeaderboardUpdate);
+    gonRequest->get(QString(gameOnAPIUrl) + "game/leaderboard", QList<RequestParameter>(), GameUpQt::GetLeaderboards);
     if (!m_asyncMode) {
         loop.exec();
-        doUpdateLeaderboard();
+        doUpdateLeaderboards();
     }
 }
 
@@ -379,7 +383,10 @@ void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, con
             doUpdateGamerRank();
         } else if (op == GameUpQt::GamerAchievmentsUpdate) {
             doUpdateGamerAchievments();
+        } else if (op == GameUpQt::GetLeaderboards) {
+            doUpdateLeaderboards();
         }
+
         emit reqComplete(op);
     } else if (loop.isRunning()) {
         loop.quit();

@@ -5,6 +5,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QEventLoop>
+#include <QQmlListProperty>
 #include "gamer.h"
 #include "leaderboard.h"
 #include "gameupqt.h"
@@ -68,8 +69,8 @@ public:
 
     QNetworkReply::NetworkError getLasterror() const;
 
-    QString getLastToken() const;
-
+    QString getLastToken() const;    
+    QQmlListProperty<Leaderboard> leaderboards();
 private slots:
     void reqfinished(int id, QNetworkReply::NetworkError error, const QByteArray &data, const QVariant &reqId);
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
@@ -113,7 +114,6 @@ private:
     QMap <QString, Leaderboard*> m_leaderboards;
     bool m_asyncMode;
     QString m_lastUsername;
-
 };
 
 #endif // GAMEUPCOMMON_H

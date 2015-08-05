@@ -17,6 +17,13 @@ QMAKE_DOCS = $$PWD/doc/gameupqt.qdocconf
 #Qt 5.5 and higher
 QT += webview-private
 
+#load(qml_plugin)
+
+OTHER_FILES += qmldir
+
+DISTFILES += \
+    plugins.qmltypes
+
 !osx:qtHaveModule(webengine) {
         QT += webengine
         DEFINES += QT_WEBVIEW_WEBENGINE_BACKEND
@@ -44,7 +51,7 @@ importPath = $$[QT_INSTALL_QML]/$$replace(TARGETPATH, \\., /).$$API_VER
 target.path = $${importPath}
 
 qmldir.path = $${importPath}
-qmldir.files += $$PWD/qmldir
+qmldir.files += $$PWD/qmldir $$PWD/plugins.qmltypes
 
 
 INSTALLS += target qmldir

@@ -1,2 +1,4 @@
 module GameUpQt
 plugin GameUpQt
+typeinfo plugins.qmltypes
+classname GameUpQtPlugin

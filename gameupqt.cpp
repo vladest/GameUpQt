@@ -106,6 +106,11 @@ Gamer *GameUpQt::gamer() {
     return d->getGamer();
 }
 
+QQmlListProperty<Leaderboard> GameUpQt::leaderboards() {
+    Q_D(GameUpQt);
+    return d->leaderboards();
+}
+
 Leaderboard *GameUpQt::leaderboard(const QString &id) {
     Q_D(GameUpQt);
     return d->getLeaderboard(id);
@@ -192,6 +197,21 @@ void GameUpQt::updateGamerData(const QString &username) {
 }
 
 /*!
+    \fn void GameUpQt::updateLeaderboards(const QString &username)
+    \inmodule GameUpQt
+
+    \brief Request to update Leaderbords list for a game
+
+    \b {Sync mode}: Waiting until data gets updated\n
+    \b {Async mode}: Returns immediately. Emits \l {leaderboardsChanged} when leaderboards gets updated. Leaderboards will be stored in \property leaderboards
+
+*/
+void GameUpQt::updateLeaderboards(const QString &username) {
+    Q_D(GameUpQt);
+    d->getLeaderboards(username);
+}
+
+/*!
     \fn void GameUpQt::setLeaderboardScore(const QString &username, const QString &leaderboardId, int score, const QString &metadata)
     \inmodule GameUpQt
 
@@ -243,6 +263,8 @@ void GameUpQt::reqComplete(GameUpQt::ServerOps op) {
         emit gamerAchievmentsUpdated();
     } else if (op == SetLeaderboardScore) {
         emit leaderboardScoreSetFinished();
+    } else if (op == GetLeaderboards) {
+        emit leaderboardsChanged();
     }
 }
 

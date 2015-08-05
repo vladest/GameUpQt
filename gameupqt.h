@@ -20,6 +20,7 @@ class GameUpQt: public QQuickItem {
     Q_PROPERTY(QString apiKey READ apiKey WRITE setApiKey NOTIFY apiKeyChanged)
     Q_PROPERTY(bool asyncMode READ asyncMode WRITE setAsyncMode NOTIFY asyncModeChanged)
     Q_PROPERTY(Gamer* gamer READ gamer NOTIFY gamerChanged)
+    Q_PROPERTY(QQmlListProperty<Leaderboard> leaderboards READ leaderboards NOTIFY leaderboardsChanged)
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
     Q_PROPERTY(QQuickWebEngineView* webView READ webView WRITE setWebView NOTIFY webViewChanged)
 #else
@@ -41,6 +42,7 @@ public:
         Ping,
         Login,
         LeaderboardUpdate,
+        GetLeaderboards,
         GamerDataUpdate,
         GamerRankUpdate,
         GamerAchievmentsUpdate,
@@ -58,6 +60,7 @@ public:
     QQuickWebView* webView() const;
 #endif
     Gamer* gamer();
+    QQmlListProperty<Leaderboard> leaderboards();
 
 public slots:
     bool ping();
@@ -67,6 +70,7 @@ public slots:
     void updateGamerAchievments(const QString &username);
     void updateGamerRank(const QString &username);
     void updateGamerData(const QString &username);
+    void updateLeaderboards(const QString &username);
     void setLeaderboardScore(const QString &username, const QString &leaderboardId, int score, const QString &metadata);
     void setAsyncMode(bool asyncMode);
     Leaderboard* leaderboard(const QString &id);
@@ -91,7 +95,7 @@ signals:
     void gamerRankUpdated();
     void gamerAchievmentsUpdated();
     void leaderboardScoreSetFinished();
-
+    void leaderboardsChanged();
 
 private:
     Q_DECLARE_PRIVATE(GameUpQt)

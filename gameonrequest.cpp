@@ -2,6 +2,8 @@
 #include <QUrlQuery>
 #include "gameonrequest.h"
 
+static const int requestAttributeIndex = (int)(QNetworkRequest::User + 10);
+
 GameOnRequest::GameOnRequest(const QString &apiKey, QNetworkAccessManager *manager, QObject *parent) :
     QObject(parent),
     m_accessManager(manager),
@@ -59,7 +61,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
         query.addQueryItem(p.name, p.value);
     }
     url.setQuery(query);
-    //qDebug() << "url" << url;
+    //qDebug() << "url" << url << reqId;
     status_ = Requesting;
     request_.setUrl(url);
 
@@ -69,7 +71,7 @@ bool GameOnRequest::setup(const QString &partUrl, const QList<RequestParameter> 
     QString auth = QString("%1:%2").arg(m_apiKey).arg(m_token);
     //qDebug() << "auth:" << auth << auth.toLatin1().toBase64();
     request_.setRawHeader(QByteArray("Authorization"), QByteArray("Basic ") + auth.toLatin1().toBase64());
-    request_.setAttribute(QNetworkRequest::User, reqId);
+    request_.setAttribute((QNetworkRequest::Attribute)requestAttributeIndex, reqId);
 
     return true;
 }
@@ -148,15 +150,17 @@ void GameOnRequest::onUploadProgress(qint64 uploaded, qint64 total) {
 
 void GameOnRequest::finish() {
     QByteArray data;
+    QVariant reqId;
     if (status_ == Idle) {
         qWarning() << "GameOnRequest::finish: No pending request";
         return;
     }
     data = reply_->readAll();
+    reqId = reply_->request().attribute((QNetworkRequest::Attribute)requestAttributeIndex);
     status_ = Idle;
     reply_->disconnect(this);
     reply_->deleteLater();
-    emit finished(id_, error_, data, reply_->attribute(QNetworkRequest::User));
+    emit finished(id_, error_, data, reqId);
 }
 
 void GameOnRequest::retry() {

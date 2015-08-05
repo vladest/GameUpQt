@@ -98,12 +98,15 @@ QQmlListProperty<Leaderboard> GameUpQtPrivate::leaderboards() {
 #ifdef QT_WEBVIEW_WEBENGINE_BACKEND
 void GameUpQtPrivate::webViewLoadingProgress(QQuickWebEngineLoadRequest *loadRequest) {
 
-    qDebug() << "loadrequest" << loadRequest->url();
+    qDebug() << "loadrequest" << loadRequest->url() << loadRequest->errorCode() << loadRequest->status();
     QUrlQuery query = QUrlQuery(loadRequest->url());
     if (query.hasQueryItem("token")) {
         m_lastToken = query.queryItemValue("token");
     }
-    if (!m_lastToken.isEmpty() || loadRequest->errorCode() != 0 || loadRequest->status() == QQuickWebEngineView::LoadFailedStatus) {
+    if (!m_lastToken.isEmpty()
+            || loadRequest->errorCode() != 0
+            || loadRequest->status() == QQuickWebEngineView::LoadFailedStatus
+            || query.isEmpty()) {
         disconnect(m_webView, &QQuickWebEngineView::loadingChanged, this, &GameUpQtPrivate::webViewLoadingProgress);
         if (!m_asyncMode && loop.isRunning())
             loop.quit();
@@ -315,6 +318,8 @@ void GameUpQtPrivate::doUpdateLeaderboards() {
                 QJsonObject o = v.toObject();
                 parseLeaderboard(o);
             }
+        } else {
+            qWarning() << "Leaderboards list is empty!";
         }
     }
 }
@@ -391,7 +396,8 @@ void GameUpQtPrivate::reqfinished(int id, QNetworkReply::NetworkError error, con
     } else if (loop.isRunning()) {
         loop.quit();
     }
-    qDebug() << "data" << data << id;
-    qDebug() << "Error:" << error;
+    //qDebug() << "data" << data << reqId;
+    if (error != QNetworkReply::NoError)
+        qDebug() << "Error:" << error;
 }
 
